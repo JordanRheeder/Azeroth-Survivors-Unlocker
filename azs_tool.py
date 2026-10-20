@@ -2,7 +2,7 @@
 """Azeroth Survivors save unlocker and game patcher.
 
   python azs_tool.py unlock [SAVE]                   unlock zones, gear, codex, achievements, talent XP
-  python azs_tool.py patch  [EXE] [talents] [caches] [bosses] [gold] [banish] [rerolls]
+  python azs_tool.py patch  [EXE] [talents] [caches] [bosses] [gold] [banish] [rerolls] [thunderfury]
                                      patch the game (all of them if none is named):
                                        talents  talent cap 51 -> 129
                                        caches   battleground caches cost no gold
@@ -10,6 +10,7 @@
                                        gold     start every run with 20 gold
                                        banish   20 banishes per run
                                        rerolls  10 free rerolls per run
+                                       thunderfury  Hunter talent: 5% free Chain Lightning per shot
   python azs_tool.py decode SAVE OUT / encode TXT SAVE
 
 SAVE defaults to the game's save (%APPDATA%\\wenilla-rogue\\characters.txt, or
@@ -184,6 +185,9 @@ def cmd_unlock(path=None):
 #   the count to be non-zero, so nothing else caps it.
 # rerolls: every run starts with 10 free rerolls, whatever the reroll perk rank; after those,
 #   rerolls cost gold as usual.
+# thunderfury: the Hunter talent Frenzy becomes Thunderfury: every shot has a 5% chance to cast a
+#   free Chain Lightning, no cooldown. It uses the game's own proc system (the same kind of effect
+#   as Omen of Clarity), so the free cast goes through the normal cast path.
 _CMP = [1411633, 1411713, 1411926, 1413327, 2083186, 92748959, 92752017, 92752273, 92752574, 92796315,
         92805761, 93003212, 93006366, 93006494, 93006622, 93006750, 93006878, 93007006, 93007134, 93007266]
 _MOV = [1411640, 1411720, 1411933, 1413335, 92748966, 92752024, 92752280, 92752581, 92796323, 92805768,
@@ -227,10 +231,24 @@ PATCHES = {
     # rerolls = 10, jump back
     "rerolls": [(4979248, "cccccccccccccccccccccccccccccc", "c785f40400000a000000e9245a4505"),
                 (93410397, "89bdf4040000", "e9cea5bafa90")],
+    # Hunter talent "Frenzy" (frenzy_hunter) becomes "Thunderfury": its proc effect (kind 0) goes from
+    # 75% free Multi-Shot on pet bites to 5% free Chain Lightning on every shot (trigger 7), no cooldown;
+    # name points at the game's "Thunderfury" string, description rewritten in place
+    "thunderfury": [
+                    (118975144, "000000000000403f00000000000000009a801747010000000a0000000000000000000000000000000600000000000000",
+                     "00000000cdcc4c3d000000000000000095f21747010000000f0000000000000007000000000000000000000000000000"),
+                    (118976824, "7d801747010000000600000000000000",
+                     "30e6b946010000000b00000000000000"),
+                    (118976880, "4900000000000000",
+                     "4800000000000000"),
+                    (118975208, "4d696c6573746f6e652e20596f757220706574732720626974657320686176652061207b767d25206368616e636520746f206669726520612066726565204d756c74692d53686f74",
+                     "5468756e646572667572793a20656163682073686f74206861732061207b767d25206368616e636520746f20636173742061206672656520436861696e204c696768746e696e672e"),
+    ],
 }
 DESCRIBE = {"talents": "talent cap 51 -> 129", "caches": "caches cost no gold",
             "bosses": "big bosses give a legendary treasure", "gold": "start every run with 20 gold",
-            "banish": "20 banishes per run", "rerolls": "10 free rerolls per run"}
+            "banish": "20 banishes per run", "rerolls": "10 free rerolls per run",
+            "thunderfury": "Hunter talent Thunderfury (5% free Chain Lightning per shot)"}
 STOCK_SHA256 = "3b46bad92e7771afa61c93658fd850937834a40f3671af8b1a3e1d2aeb8b63c7"
 # edits from earlier releases that are always undone (the first "gold" patch hit the wrong field)
 RETIRED = [(93410230, "00000000", "14000000"),
