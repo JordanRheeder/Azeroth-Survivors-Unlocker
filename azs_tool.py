@@ -2,7 +2,7 @@
 """Azeroth Survivors save unlocker and game patcher.
 
   python azs_tool.py unlock [SAVE]                   unlock zones, gear, codex, achievements, talent XP
-  python azs_tool.py patch  [EXE] [talents] [caches] [bosses] [gold] [banish] [rerolls] [thunderfury] [tfvisual]
+  python azs_tool.py patch  [EXE] [talents] [caches] [bosses] [gold] [banish] [rerolls] [thunderfury] [tfvisual] [tfweapon] [density] [firstcache]
                                      patch the game (all of them if none is named):
                                        talents  talent cap 51 -> 129
                                        caches   battleground caches cost no gold
@@ -10,8 +10,11 @@
                                        gold     start every run with 20 gold
                                        banish   20 banishes per run
                                        rerolls  10 free rerolls per run
-                                       thunderfury  Hunter Frenzy also: 5% free Chain Lightning per shot
+                                       thunderfury  5% free Chain Lightning when an Auto Shot lands
                                        tfvisual  Chain Lightning looks like Thunderfury (Shaman too)
+                                       tfweapon  starter Worn Dagger shows as Thunderfury
+                                       density  kill XP/gold as at 100% density
+                                       firstcache  first cache of a run is legendary
   python azs_tool.py decode SAVE OUT / encode TXT SAVE
 
 SAVE defaults to the game's save (%APPDATA%\\wenilla-rogue\\characters.txt, or
@@ -186,9 +189,13 @@ def cmd_unlock(path=None):
 #   the count to be non-zero, so nothing else caps it.
 # rerolls: every run starts with 10 free rerolls, whatever the reroll perk rank; after those,
 #   rerolls cost gold as usual.
-# thunderfury: the Hunter talent Frenzy keeps what it does and also gives every shot a 5% chance to
-#   cast a free Chain Lightning, no cooldown, and that Chain Lightning slows what it hits by 20% for
-#   12 sec (the game's own on-hit slow effect, like Rain of Chaos). It uses the game's own proc system (the same kind of
+# thunderfury: the Hunter talent Frenzy keeps what it does and also gives a 5% chance to
+#   cast a free Chain Lightning whenever an Auto Shot lands, no cooldown, and that Chain Lightning slows
+#   what it hits by 20% for 12 sec (the game's own on-hit slow effect, like Rain of Chaos).
+# tfweapon: the starter Worn Dagger shows as Thunderfury (name and model), for every hero that shows it.
+# density: kills give XP and gold as if enemy density were 100%, whatever it is set to (more
+#   enemies still spawn).
+# firstcache: the first battleground cache you open in a run offers only legendary rewards. It uses the game's own proc system (the same kind of
 #   effect as Omen of Clarity), so the free cast goes through the normal cast path.
 # tfvisual: Chain Lightning uses WoW spell 21992 (Thunderfury) for its visuals and icon instead of
 #   421, so the proc looks like Thunderfury. Shaman Chain Lightning looks like it too.
@@ -237,22 +244,23 @@ PATCHES = {
                 (93410397, "89bdf4040000", "e9cea5bafa90")],
     # Hunter talent Frenzy (frenzy_hunter) keeps its effect (75% free Multi-Shot on pet bites) and gains
     # two more: Chain Lightning hits slow by 20% for 12 sec (kind 8, filtered to chain_lightning) and 5%
-    # free Chain Lightning on every shot (proc kind 0, trigger 7), no cooldown. The new 3-entry effect
+    # free Chain Lightning whenever an Auto Shot lands (proc kind 0, trigger 1 filtered to auto_shot),
+    # no cooldown. The new 3-entry effect
     # list (entries are 0x40 bytes) and description live just past .text's VirtualSize (raised to cover them),
     # with a .reloc block for the two ability-key pointers in the list (the image uses ASLR).
     "thunderfury": [
         (97831024, "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
-         "000000000000403f00000000000000009a801747010000000a000000000000000000000000000000060000000000000000000000000000000000000000000000080000000000803f01000000cdcc4c3e00004041000000000000000000000000010000000000000095f21747010000000f00000000000000000000000000000000000000cdcc4c3d000000000000000095f21747010000000f000000000000000700000000000000000000000000000000000000000000000000000000000000"),
-        (97831216, "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
-         "4d696c6573746f6e652e20596f757220706574732720626974657320686176652061207b767d25206368616e636520746f206669726520612066726565204d756c74692d53686f742e205468756e646572667572793a2065766572792073686f74206861732061203525206368616e636520746f20636173742061206672656520436861696e204c696768746e696e672c20776869636820736c6f7773207768617420697420686974732062792032302520666f72203132207365632e"),
+         "000000000000403f00000000000000009a801747010000000a000000000000000000000000000000060000000000000000000000000000000000000000000000080000000000803f01000000cdcc4c3e00004041000000000000000000000000010000000000000095f21747010000000f00000000000000000000000000000000000000cdcc4c3d000000000000000095f21747010000000f000000000000000100000000000000010000000000000021cfb846010000000900000000000000"),
+        (97831216, "0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+         "4d696c6573746f6e652e20596f757220706574732720626974657320686176652061207b767d25206368616e636520746f206669726520612066726565204d756c74692d53686f742e205468756e646572667572793a2065616368204175746f2053686f742074686174206c616e6473206861732061203525206368616e636520746f20636173742061206672656520436861696e204c696768746e696e672c20736c6f77696e67207768617420697420686974732062792032302520666f72203132207365632e"),
         (118976856, "a8801747010000000100000000000000",
          "70d4d445010000000300000000000000"),
         (118976872, "e8801747010000004900000000000000",
-         "30d5d44501000000bd00000000000000"),
+         "30d5d44501000000c800000000000000"),
         (536, "6ec4d405",
-         "edc5d405"),
+         "f8c5d405"),
         (139728088, "00000000000000000000000000000000",
-         "00d0d4051000000080a4d8a400a50000"),
+         "00d0d4051000000080a4d8a400a520a5"),
         (736, "d8aa1300",
          "e8aa1300"),
         (444, "d8aa1300",
@@ -261,12 +269,35 @@ PATCHES = {
     # Chain Lightning's WoW spell id (used for its visuals and icon) 421 -> 21992 "Thunderfury";
     # affects every Chain Lightning, the Shaman's too
     "tfvisual": [(112783872, "a5010000", "e8550000")],
+    # the starter Worn Dagger (WoW item 2092) record: name -> "Thunderfury, Blessed Blade of the Windseeker",
+    # display 6442 -> 30606 (the model the game uses for its own Thunderfury)
+    "tfweapon": [
+        (112832680, "90c0b946010000000b00000000000000",
+         "30e6b946010000002c00000000000000"),
+        (112832700, "2a190000",
+         "8e770000"),
+    ],
+    # kill rewards: the death handler turns the density option into a drop chance (1.65 / density);
+    # load 100 instead of the option in both reward blocks, so kills pay out as at 100% density
+    "density": [
+        (93578948, "0fb78648020000", "b8640000006690"),  # movzx eax,[rsi+0x248] -> mov eax,100
+        (93579035, "0fb78648020000", "b8640000006690"),  # movzx eax,[rsi+0x248] -> mov eax,100
+    ],
+    # cache hands are dealt with luck 0; detour into an int3 gap: if this is the run's first cache
+    # (caches opened this run == 1) use luck 1,000,000 so every card is legendary
+    "firstcache": [
+        (4981780, "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+         "488d4df083bea006000001750af30f10150380a605eb030f57d2e90a414905"),
+        (93668619, "488d4df00f57d2eb29",
+         "e904bfb6fa0f1f4000"),
+    ],
 }
 DESCRIBE = {"talents": "talent cap 51 -> 129", "caches": "caches cost no gold",
             "bosses": "big bosses give a legendary treasure", "gold": "start every run with 20 gold",
             "banish": "20 banishes per run", "rerolls": "10 free rerolls per run",
-            "thunderfury": "Hunter Frenzy also procs Thunderfury (5% free Chain Lightning per shot, 20% slow)",
-            "tfvisual": "Chain Lightning looks like Thunderfury"}
+            "thunderfury": "Thunderfury: 5% free Chain Lightning when an Auto Shot lands (Hunter Frenzy), 20% slow",
+            "tfvisual": "Chain Lightning looks like Thunderfury",
+            "tfweapon": "starter Worn Dagger shows as Thunderfury", "density": "kill rewards ignore enemy density", "firstcache": "first cache of a run is legendary"}
 STOCK_SHA256 = "3b46bad92e7771afa61c93658fd850937834a40f3671af8b1a3e1d2aeb8b63c7"
 # edits from earlier releases that are always undone (the first "gold" patch hit the wrong field)
 RETIRED = [(93410230, "00000000", "14000000"),
@@ -305,7 +336,17 @@ RETIRED = [(93410230, "00000000", "14000000"),
            (736, "d8aa1300",
             "e4aa1300"),  # third Thunderfury version (2 effects)
            (444, "d8aa1300",
-            "e4aa1300")]  # third Thunderfury version (2 effects)
+            "e4aa1300"),  # third Thunderfury version (2 effects)
+           (97831024, "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+            "000000000000403f00000000000000009a801747010000000a000000000000000000000000000000060000000000000000000000000000000000000000000000080000000000803f01000000cdcc4c3e00004041000000000000000000000000010000000000000095f21747010000000f00000000000000000000000000000000000000cdcc4c3d000000000000000095f21747010000000f000000000000000700000000000000000000000000000000000000000000000000000000000000"),  # fourth Thunderfury version (proc on every shot)
+           (97831216, "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+            "4d696c6573746f6e652e20596f757220706574732720626974657320686176652061207b767d25206368616e636520746f206669726520612066726565204d756c74692d53686f742e205468756e646572667572793a2065766572792073686f74206861732061203525206368616e636520746f20636173742061206672656520436861696e204c696768746e696e672c20776869636820736c6f7773207768617420697420686974732062792032302520666f72203132207365632e"),  # fourth Thunderfury version (proc on every shot)
+           (118976872, "e8801747010000004900000000000000",
+            "30d5d44501000000bd00000000000000"),  # fourth Thunderfury version (proc on every shot)
+           (536, "6ec4d405",
+            "edc5d405"),  # fourth Thunderfury version (proc on every shot)
+           (139728088, "00000000000000000000000000000000",
+            "00d0d4051000000080a4d8a400a50000")]  # fourth Thunderfury version (proc on every shot)
 
 
 def _state(d):

@@ -33,7 +33,7 @@ next to the save (characters.txt.before-unlock-<date>.bak).
 
 2) Game patches (optional)
 --------------------------
-Eight patches for the game exe, use any combination:
+Eleven patches for the game exe, use any combination:
 
   talents  The game normally stops at 51 talent points. Each class can now earn 129,
            enough to max all three talent trees.
@@ -49,15 +49,21 @@ Eight patches for the game exe, use any combination:
   banish   Every run starts with 20 banishes, whatever your Banish perk rank.
   rerolls  Every run starts with 10 free rerolls, whatever your perk rank. After
            those, rerolls cost gold as usual.
-  thunderfury  The Hunter talent Frenzy keeps what it does and also gives every
-           shot a 5% chance to cast a free Chain Lightning, with no cooldown, which
-           slows what it hits by 20% for 12 sec. Spend a point in Frenzy in the
-           Talents tab.
+  thunderfury  Every Auto Shot that lands has a 5% chance to cast a free Chain
+           Lightning, with no cooldown, which slows what it hits by 20% for 12 sec.
+           The Hunter talent Frenzy carries it (and keeps what it does), so spend
+           a point in Frenzy in the Talents tab.
   tfvisual Chain Lightning uses the Thunderfury spell's visuals and icon (WoW
            spell 21992), so the proc looks like the real thing. Shaman Chain
            Lightning looks like it too.
+  tfweapon The starting Worn Dagger is shown as Thunderfury (name and model), on
+           every hero that shows it.
+  density  Kills give XP and gold as if enemy density were 100%, whatever you
+           set it to. More enemies still spawn.
+  firstcache  The first battleground cache you open in a run offers only
+           legendary rewards.
 
-Run from the game folder (no names = all eight patches):
+Run from the game folder (no names = all eleven patches):
 
     python azs_tool.py patch
     python azs_tool.py patch talents
