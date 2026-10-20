@@ -2,7 +2,7 @@
 """Azeroth Survivors save unlocker and game patcher.
 
   python azs_tool.py unlock [SAVE]                   unlock zones, gear, codex, achievements, talent XP
-  python azs_tool.py patch  [EXE] [talents] [caches] [bosses] [gold] [banish] [rerolls] [classes] [tfvisual] [tfweapon] [density] [firstcache] [luck]
+  python azs_tool.py patch  [EXE] [talents] [caches] [bosses] [gold] [banish] [rerolls] [classes] [tfvisual] [tfweapon] [density] [firstcache] [luck] [mindflay]
                                      patch the game (all of them if none is named):
                                        talents  talent cap 51 -> 129
                                        caches   battleground caches cost no gold
@@ -16,6 +16,7 @@
                                        density  kill XP/gold as at 100% density
                                        firstcache  first cache of a run: legendary amulets
                                        luck     every race starts with 100% luck
+                                       mindflay Mind Flay targets like Drain Life
   python azs_tool.py decode SAVE OUT / encode TXT SAVE
 
 SAVE defaults to the game's save (%APPDATA%\\wenilla-rogue\\characters.txt, or
@@ -202,6 +203,7 @@ def cmd_unlock(path=None):
 #   enemies still spawn).
 # firstcache: the first battleground cache you open in a run offers only legendary amulets.
 # luck: every race starts with 100% luck (Gnomes get their +20% on top).
+# mindflay: Mind Flay picks its own target like Drain Life instead of firing where you face.
 _CMP = [1411633, 1411713, 1411926, 1413327, 2083186, 92748959, 92752017, 92752273, 92752574, 92796315,
         92805761, 93003212, 93006366, 93006494, 93006622, 93006750, 93006878, 93007006, 93007134, 93007266]
 _MOV = [1411640, 1411720, 1411933, 1413335, 92748966, 92752024, 92752280, 92752581, 92796323, 92805768,
@@ -328,6 +330,14 @@ PATCHES = {
         (93410373, "440f119dc4040000",
          "e91467bbfa0f1f00"),
     ],
+    # Mind Flay's ability record takes Drain Life's targeting, duration, ticks and shape, so it locks onto the
+    # nearest enemy instead of firing a cone where you face; keeps its own damage, cooldown, range and slow
+    "mindflay": [
+        (112783292, "00000000", "01000000"),  # targeting: in front of you -> nearest enemy
+        (112783296, "00000000", "00004040"),  # channel duration 0 -> 3 sec
+        (112783300, "00000000", "03000000"),  # ticks 0 -> 3
+        (112783325, "08", "06"),  # shape: cone -> on-target damage over time
+    ],
 }
 DESCRIBE = {"talents": "talent cap 51 -> 129", "caches": "caches cost no gold",
             "bosses": "big bosses give a legendary treasure", "gold": "start every run with 20 gold",
@@ -335,7 +345,8 @@ DESCRIBE = {"talents": "talent cap 51 -> 129", "caches": "caches cost no gold",
             "classes": "class changes (Hunter Thunderfury + 7 slots, Shadow Priest and Affliction capstones)",
             "tfvisual": "Chain Lightning looks like Thunderfury",
             "tfweapon": "starter Worn Dagger shows as Thunderfury", "density": "kill rewards ignore enemy density", "firstcache": "first cache of a run: legendary amulets",
-            "luck": "every race starts with 100% luck"}
+            "luck": "every race starts with 100% luck",
+            "mindflay": "Mind Flay targets like Drain Life"}
 STOCK_SHA256 = "3b46bad92e7771afa61c93658fd850937834a40f3671af8b1a3e1d2aeb8b63c7"
 # edits from earlier releases that are always undone (the first "gold" patch hit the wrong field)
 RETIRED = [(93410230, "00000000", "14000000"),

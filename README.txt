@@ -33,7 +33,7 @@ next to the save (characters.txt.before-unlock-<date>.bak).
 
 2) Game patches (optional)
 --------------------------
-Twelve patches for the game exe, use any combination:
+Thirteen patches for the game exe, use any combination:
 
   talents  The game normally stops at 51 talent points. Each class can now earn 129,
            enough to max all three talent trees.
@@ -66,8 +66,10 @@ Twelve patches for the game exe, use any combination:
   firstcache  The first battleground cache you open in a run offers only
            legendary amulets, so you can pick the amulet your run is built around.
   luck     Every race starts with 100% luck (Gnomes keep their +20% on top).
+  mindflay Mind Flay picks the nearest enemy and channels on it, like Drain
+           Life, so you don't have to face your targets.
 
-Run from the game folder (no names = all twelve patches):
+Run from the game folder (no names = all thirteen patches):
 
     python azs_tool.py patch
     python azs_tool.py patch talents

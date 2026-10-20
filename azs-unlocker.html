@@ -120,6 +120,9 @@
     <label class="opt"><input type="checkbox" id="optLuck" checked>
       <span><b>100% luck.</b> Every race starts with 100% luck, as if it had a +100% luck racial (Gnomes keep their
         +20% on top).</span></label>
+    <label class="opt"><input type="checkbox" id="optMindflay" checked>
+      <span><b>Mind Flay like Drain Life.</b> Mind Flay picks the nearest enemy and channels on it, so you don't have to
+        face your targets. It keeps its damage, cooldown and slow.</span></label>
     <label class="drop" id="exeDrop">
       <input type="file" id="exeFile" accept=".exe">
       Click to choose <b>AzerothSurvivors.exe</b>, or drop it here
@@ -441,9 +444,17 @@ const PATCHES = {
     [5028702, "cccccccccccccccccccccccccccccccccccccccccccccc", "440f119dc4040000c785cc0400000000803fe9d8984405"],
     [93410373, "440f119dc4040000", "e91467bbfa0f1f00"],
   ],
+  // Mind Flay's ability record takes Drain Life's targeting, duration, ticks and shape, so it locks onto the nearest
+  // enemy instead of firing a cone where you face; keeps its own damage, cooldown, range and slow
+  mindflay: [
+    [112783292, "00000000", "01000000"],  // targeting: in front of you -> nearest enemy
+    [112783296, "00000000", "00004040"],  // channel duration 0 -> 3 sec
+    [112783300, "00000000", "03000000"],  // ticks 0 -> 3
+    [112783325, "08", "06"],  // shape: cone -> on-target damage over time
+  ],
 };
 const DESCRIBE = {talents: "talent cap 51 → 129", caches: "free battleground caches", bosses: "legendary treasure from big bosses", gold: "start every run with 20 gold", banish: "20 banishes per run", rerolls: "10 free rerolls per run", classes: "class changes", tfvisual: "Chain Lightning looks like Thunderfury",
-                  tfweapon: "Worn Dagger shows as Thunderfury", density: "kill rewards ignore density", firstcache: "legendary amulets in the first cache", luck: "100% luck for every race"};
+                  tfweapon: "Worn Dagger shows as Thunderfury", density: "kill rewards ignore density", firstcache: "legendary amulets in the first cache", luck: "100% luck for every race", mindflay: "Mind Flay targets like Drain Life"};
 const STOCK_SHA256 = "3b46bad92e7771afa61c93658fd850937834a40f3671af8b1a3e1d2aeb8b63c7";
 // edits from earlier releases that are always undone (the first "gold" patch hit the wrong field)
 const RETIRED = [[93410230, "00000000", "14000000"],
@@ -557,10 +568,11 @@ const optTalents = document.getElementById("optTalents"), optCaches = document.g
       optTfvisual = document.getElementById("optTfvisual"),
       optTfweapon = document.getElementById("optTfweapon"), optDensity = document.getElementById("optDensity"),
       optFirstcache = document.getElementById("optFirstcache"),
-      optLuck = document.getElementById("optLuck");
+      optLuck = document.getElementById("optLuck"),
+      optMindflay = document.getElementById("optMindflay");
 let exe = null;  // {bytes, have}
 const chosen = () => [optTalents.checked && "talents", optCaches.checked && "caches", optBosses.checked && "bosses", optGold.checked && "gold", optBanish.checked && "banish", optRerolls.checked && "rerolls", optClasses.checked && "classes", optTfvisual.checked && "tfvisual",
-  optTfweapon.checked && "tfweapon", optDensity.checked && "density", optFirstcache.checked && "firstcache", optLuck.checked && "luck"].filter(Boolean);
+  optTfweapon.checked && "tfweapon", optDensity.checked && "density", optFirstcache.checked && "firstcache", optLuck.checked && "luck", optMindflay.checked && "mindflay"].filter(Boolean);
 
 function refreshExe() {
   if (!exe) return;
@@ -571,7 +583,7 @@ function refreshExe() {
   else status(exeStatus, `Game version recognised.${already} Will add: ${todo.map(p => DESCRIBE[p]).join(", ")}.`, "ok");
   exeBtn.disabled = !todo.length;
 }
-[optTalents, optCaches, optBosses, optGold, optBanish, optRerolls, optClasses, optTfvisual, optTfweapon, optDensity, optFirstcache, optLuck].forEach(cb => cb.addEventListener("change", refreshExe));
+[optTalents, optCaches, optBosses, optGold, optBanish, optRerolls, optClasses, optTfvisual, optTfweapon, optDensity, optFirstcache, optLuck, optMindflay].forEach(cb => cb.addEventListener("change", refreshExe));
 
 wireDrop(document.getElementById("exeDrop"), document.getElementById("exeFile"), async file => {
   exe = null; exeBtn.disabled = true;
