@@ -49,9 +49,9 @@ Seven patches for the game exe, use any combination:
   banish   Every run starts with 20 banishes, whatever your Banish perk rank.
   rerolls  Every run starts with 10 free rerolls, whatever your perk rank. After
            those, rerolls cost gold as usual.
-  thunderfury  The Hunter talent Frenzy becomes Thunderfury: every shot has a 5%
-           chance to cast a free Chain Lightning, with no cooldown. Spend a point
-           in it in the Talents tab.
+  thunderfury  The Hunter talent Frenzy keeps what it does and also gives every
+           shot a 5% chance to cast a free Chain Lightning, with no cooldown. Spend
+           a point in Frenzy in the Talents tab.
 
 Run from the game folder (no names = all seven patches):
 
