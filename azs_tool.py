@@ -2,7 +2,7 @@
 """Azeroth Survivors save unlocker and game patcher.
 
   python azs_tool.py unlock [SAVE]                   unlock zones, gear, codex, achievements, talent XP
-  python azs_tool.py patch  [EXE] [talents] [caches] [bosses] [gold] [banish] [rerolls] [classes] [tfvisual] [tfweapon] [density] [firstcache] [luck] [mindflay] [lifesteal] [cacherate] [guardians]
+  python azs_tool.py patch  [EXE] [talents] [caches] [bosses] [gold] [banish] [rerolls] [classes] [tfvisual] [tfweapon] [density] [firstcache] [luck] [mindflay] [lifesteal] [cacherate] [guardians] [dotcrit]
                                      patch the game (all of them if none is named):
                                        talents  talent cap 51 -> 129
                                        caches   battleground caches cost no gold
@@ -20,6 +20,7 @@
                                        lifesteal  1% lifesteal for Shaman, Mage and Druid
                                        cacherate  caches spawn twice as often
                                        guardians  slain guardians respawn at once
+                                       dotcrit  damage-over-time ticks can crit
   python azs_tool.py decode SAVE OUT / encode TXT SAVE
 
 SAVE defaults to the game's save (%APPDATA%\\wenilla-rogue\\characters.txt, or
@@ -210,6 +211,7 @@ def cmd_unlock(path=None):
 # lifesteal: Shaman, Mage and Druid start with 1% lifesteal (the other classes already have some).
 # cacherate: battleground caches spawn twice as often (every 35 sec instead of 70).
 # guardians: a slain guardian's lair spawns a new guardian at once instead of 3 minutes later.
+# dotcrit: every damage-over-time tick rolls your crit chance and deals your crit damage on a crit.
 _CMP = [1411633, 1411713, 1411926, 1413327, 2083186, 92748959, 92752017, 92752273, 92752574, 92796315,
         92805761, 93003212, 93006366, 93006494, 93006622, 93006750, 93006878, 93007006, 93007134, 93007266]
 _MOV = [1411640, 1411720, 1411933, 1413335, 92748966, 92752024, 92752280, 92752581, 92796323, 92805768,
@@ -382,6 +384,32 @@ PATCHES = {
     "guardians": [
         (93577357, "f30f5805b7ff4f00", "0f1f840000000000"),  # guardian killed: lair respawns at now + 180 sec -> now (addss -> nop)
     ],
+    # DoT ticks are applied with the crit flag fixed at 0. Detour the tick loop: before the tick's damage
+    # is turned into its combat-text number, roll rdtsc & 0xffff / 65536 against crit chance [state+0x47c]; on a
+    # crit multiply the tick by crit damage [state+0x480]. The result goes in the tick event's spare byte +0x26,
+    # and a second detour passes it as the crit flag. The code is chained through int3 gaps.
+    "dotcrit": [
+        (93552401, "cccccccccccccccccccccccccccc",
+         "0f310fb7c0f30f2ac0e9021a0300"),
+        (93611325, "f3480f2ccf",
+         "e9cf19ffff"),
+        (93611508, "c644242800",
+         "e978230300"),
+        (93755681, "cccccccccccccccccccccccccc",
+         "f30f59050712b500e9e3350000"),
+        (93769489, "cccccccccccccccccccccccccc",
+         "410f2e857c040000e913010000"),
+        (93769777, "cccccccccccccccccccccc",
+         "0f92c0884726e9255a0000"),
+        (93792865, "cccccccccccccccccccccc",
+         "0f830a150000e965050000"),
+        (93794257, "cccccccccccccccccccccccccccc",
+         "f3410f59bd80040000e9920f0000"),
+        (93798257, "cccccccccccccccccccccccccccc",
+         "f3480f2ccf410fb6c6e9c325fdff"),
+        (93817201, "cccccccccccccccccccccccccc",
+         "0fb6472688442428e97bdcfcff"),
+    ],
 }
 DESCRIBE = {"talents": "talent cap 51 -> 129", "caches": "caches cost no gold",
             "bosses": "big bosses give a legendary treasure", "gold": "start every run with 20 gold",
@@ -393,7 +421,8 @@ DESCRIBE = {"talents": "talent cap 51 -> 129", "caches": "caches cost no gold",
             "mindflay": "Mind Flay hits every enemy in range",
             "lifesteal": "1% lifesteal for Shaman, Mage and Druid",
             "cacherate": "caches spawn twice as often",
-            "guardians": "slain guardians respawn at once"}
+            "guardians": "slain guardians respawn at once",
+            "dotcrit": "damage-over-time ticks can crit"}
 STOCK_SHA256 = "3b46bad92e7771afa61c93658fd850937834a40f3671af8b1a3e1d2aeb8b63c7"
 # edits from earlier releases that are always undone (the first "gold" patch hit the wrong field)
 RETIRED = [(93410230, "00000000", "14000000"),

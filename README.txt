@@ -33,7 +33,7 @@ next to the save (characters.txt.before-unlock-<date>.bak).
 
 2) Game patches (optional)
 --------------------------
-Sixteen patches for the game exe, use any combination:
+Seventeen patches for the game exe, use any combination:
 
   talents  The game normally stops at 51 talent points. Each class can now earn 129,
            enough to max all three talent trees.
@@ -76,8 +76,10 @@ Sixteen patches for the game exe, use any combination:
   guardians  When a guardian dies, its lair spawns a new one at once instead of
            3 minutes later. Each still drops its treasure, and they keep
            growing stronger.
+  dotcrit  Every damage-over-time tick rolls your crit chance and deals your
+           crit damage when it crits, like a direct hit.
 
-Run from the game folder (no names = all sixteen patches):
+Run from the game folder (no names = all seventeen patches):
 
     python azs_tool.py patch
     python azs_tool.py patch talents
