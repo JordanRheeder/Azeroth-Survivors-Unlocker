@@ -62,8 +62,9 @@ Sixteen patches for the game exe, use any combination:
            Lightning looks like it too.
   tfweapon The starting Worn Dagger is shown as Thunderfury (name and model), on
            every hero that shows it.
-  density  Kills give XP and gold as if enemy density were 100%, whatever you
-           set it to. More enemies still spawn.
+  density  The enemy density slider goes up to 1000%. Kills give a quarter of
+           the XP they would at 100% density, and gold as at 100%, whatever
+           you set it to.
   firstcache  The first battleground cache you open in a run offers only
            legendary amulets, so you can pick the amulet your run is built around.
   luck     Every race starts with 100% luck (Gnomes keep their +20% on top).

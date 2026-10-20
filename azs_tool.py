@@ -13,7 +13,7 @@
                                        classes  Hunter Auto Shot fork/chain/Thunderfury + 7 slots, Shadow/Affliction capstones
                                        tfvisual  Chain Lightning looks like Thunderfury (Shaman too)
                                        tfweapon  starter Worn Dagger shows as Thunderfury
-                                       density  kill XP/gold as at 100% density
+                                       density  density up to 1000%, kill XP 1/4, gold as at 100%
                                        firstcache  first cache of a run: legendary amulets
                                        luck     every race starts with 100% luck
                                        mindflay Mind Flay hits every enemy in range
@@ -202,8 +202,8 @@ def cmd_unlock(path=None):
 # tfvisual: Chain Lightning uses WoW spell 21992 (Thunderfury) for its visuals and icon instead of
 #   421, so the proc looks like Thunderfury. Shaman Chain Lightning looks like it too.
 # tfweapon: the starter Worn Dagger shows as Thunderfury (name and model), for every hero that shows it.
-# density: kills give XP and gold as if enemy density were 100%, whatever it is set to (more
-#   enemies still spawn).
+# density: enemy density goes up to 1000%; kills give a quarter of the XP they would at 100% density
+#   and gold as at 100%, whatever density is set to (more enemies still spawn).
 # firstcache: the first battleground cache you open in a run offers only legendary amulets.
 # luck: every race starts with 100% luck (Gnomes get their +20% on top).
 # mindflay: Mind Flay channels on every enemy in range, like Drain Life, instead of firing where you face.
@@ -326,11 +326,16 @@ PATCHES = {
         (112832700, "2a190000",
          "8e770000"),
     ],
-    # kill rewards: the death handler turns the density option into a drop chance (1.65 / density);
-    # load 100 instead of the option in both reward blocks, so kills pay out as at 100% density
+    # kill rewards: XP per normal kill is enemy XP x 1.65 / (density / 100) and the gold chance is that x 0.1
+    # (elites ignore density). Load 400 instead of the option for normal kills (a quarter of the XP at 100%) and
+    # make the gold factor 0.4 so gold drops as at 100%; elites get 100. The density slider and the saved-options
+    # clamp go up to 1000%.
     "density": [
-        (93578948, "0fb78648020000", "b8640000006690"),  # movzx eax,[rsi+0x248] -> mov eax,100
-        (93579035, "0fb78648020000", "b8640000006690"),  # movzx eax,[rsi+0x248] -> mov eax,100
+        (93578948, "0fb78648020000", "b8640000006690"),  # elite block: movzx eax,[rsi+0x248] -> mov eax,100
+        (93579035, "0fb78648020000", "b8900100006690"),  # normal block: movzx eax,[rsi+0x248] -> mov eax,400 (XP x1.65/4)
+        (93579795, "f3440f5905b4564100", "f3440f590524574100"),  # gold chance: factor x 0.1 -> x 0.4 (back to the 100% rate)
+        (98144566, "f401", "e803"),  # Enemy density slider max 500 -> 1000
+        (92797827, "4181faf4010000", "4181fae9030000"),  # options load: density clamp 500 -> 1000
     ],
     # cache hands are dealt with luck 0; detour into an int3 gap: if this is the run's first cache
     # (caches opened this run == 1) use luck 1,000,000 so every card is legendary; and in the card loop,
@@ -383,7 +388,7 @@ DESCRIBE = {"talents": "talent cap 51 -> 129", "caches": "caches cost no gold",
             "banish": "20 banishes per run", "rerolls": "10 free rerolls per run",
             "classes": "class changes (Hunter fork/chain/Thunderfury Auto Shot + 7 slots, Shadow Priest and Affliction capstones)",
             "tfvisual": "Chain Lightning looks like Thunderfury",
-            "tfweapon": "starter Worn Dagger shows as Thunderfury", "density": "kill rewards ignore enemy density", "firstcache": "first cache of a run: legendary amulets",
+            "tfweapon": "starter Worn Dagger shows as Thunderfury", "density": "density up to 1000%, kill XP at 1/4, gold as at 100%", "firstcache": "first cache of a run: legendary amulets",
             "luck": "every race starts with 100% luck",
             "mindflay": "Mind Flay hits every enemy in range",
             "lifesteal": "1% lifesteal for Shaman, Mage and Druid",
@@ -494,7 +499,9 @@ RETIRED = [(93410230, "00000000", "14000000"),
            (736, "d8aa1300",
             "10ab1300"),  # first "classes" version (Chain Lightning proc)
            (444, "d8aa1300",
-            "10ab1300")]  # first "classes" version (Chain Lightning proc)
+            "10ab1300"),  # first "classes" version (Chain Lightning proc)
+           (93579035, "0fb78648020000",
+            "b8640000006690")]  # first density version (XP as at 100%)
 
 
 def _state(d):
