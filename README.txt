@@ -46,7 +46,7 @@ Six patches for the game exe, use any combination:
            treasure. Now each one gives a treasure with legendary rewards. Guardian and
            elite treasures stay as they were.
   gold     Every run starts with 20 gold instead of none.
-  banish   Every run starts with 10 banishes, whatever your Banish perk rank.
+  banish   Every run starts with 20 banishes, whatever your Banish perk rank.
   rerolls  Every run starts with 10 free rerolls, whatever your perk rank. After
            those, rerolls cost gold as usual.
 
