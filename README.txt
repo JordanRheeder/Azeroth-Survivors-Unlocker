@@ -33,7 +33,7 @@ next to the save (characters.txt.before-unlock-<date>.bak).
 
 2) Game patches (optional)
 --------------------------
-Thirteen patches for the game exe, use any combination:
+Fifteen patches for the game exe, use any combination:
 
   talents  The game normally stops at 51 talent points. Each class can now earn 129,
            enough to max all three talent trees.
@@ -49,10 +49,10 @@ Thirteen patches for the game exe, use any combination:
   banish   Every run starts with 20 banishes, whatever your Banish perk rank.
   rerolls  Every run starts with 10 free rerolls, whatever your perk rank. After
            those, rerolls cost gold as usual.
-  classes  Hunter: every Auto Shot that lands has a 5% chance to cast a free
-           Chain Lightning (no cooldown, slows 20% for 12 sec); runs start with
-           Chain Lightning and Hunters can hold 7 abilities. Frenzy carries this,
-           so spend a point in it. Shadow Priest: the Shadowform capstone also
+  classes  Hunter: every Auto Shot forks to 2 enemies and chains to 3 more, each
+           for its full damage; 5% of them hit 4 more on top (Thunderfury), and
+           5% slow their target by 20% for 5 sec; Hunters can hold 7 abilities.
+           Frenzy carries this, so spend a point in it. Shadow Priest: the Shadowform capstone also
            starts runs with Devouring Plague, Mind Flay and Mind Blast. Affliction
            Warlock: the Seed of Corruption capstone also starts runs with Drain
            Life and Curse of Agony.
@@ -68,8 +68,11 @@ Thirteen patches for the game exe, use any combination:
   luck     Every race starts with 100% luck (Gnomes keep their +20% on top).
   mindflay Mind Flay channels on every enemy in range (like Drain Life does on
            one), so you don't have to face your targets.
+  lifesteal  Shaman, Mage and Druid start with 1% lifesteal (the other classes
+           already start with some).
+  cacherate  Battleground caches spawn twice as often (every 35 sec, not 70).
 
-Run from the game folder (no names = all thirteen patches):
+Run from the game folder (no names = all fifteen patches):
 
     python azs_tool.py patch
     python azs_tool.py patch talents
