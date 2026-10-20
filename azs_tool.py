@@ -2,7 +2,7 @@
 """Azeroth Survivors save unlocker and game patcher.
 
   python azs_tool.py unlock [SAVE]                   unlock zones, gear, codex, achievements, talent XP
-  python azs_tool.py patch  [EXE] [talents] [caches] [bosses] [gold] [banish] [rerolls] [classes] [tfvisual] [tfweapon] [density] [firstcache] [luck] [mindflay] [lifesteal] [cacherate] [guardians] [dotcrit]
+  python azs_tool.py patch  [EXE] [talents] [caches] [bosses] [gold] [banish] [rerolls] [classes] [tfvisual] [tfweapon] [density] [firstcache] [luck] [mindflay] [lifesteal] [cacherate] [guardians] [dotcrit] [apparitions]
                                      patch the game (all of them if none is named):
                                        talents  talent cap 51 -> 129
                                        caches   battleground caches cost no gold
@@ -16,11 +16,12 @@
                                        density  density up to 1000%, kill XP 1/4, gold as at 100%
                                        firstcache  first cache of a run: legendary amulets
                                        luck     every race starts with 100% luck
-                                       mindflay Mind Flay hits every enemy in range
+                                       mindflay Mind Flay hits every enemy within 30 yd
                                        lifesteal  1% lifesteal for Shaman, Mage and Druid
                                        cacherate  caches spawn twice as often
                                        guardians  slain guardians respawn at once
                                        dotcrit  damage-over-time ticks can crit
+                                       apparitions  Shadowy Apparitions: any DoT tick, no cap
   python azs_tool.py decode SAVE OUT / encode TXT SAVE
 
 SAVE defaults to the game's save (%APPDATA%\\wenilla-rogue\\characters.txt, or
@@ -207,11 +208,13 @@ def cmd_unlock(path=None):
 #   and gold as at 100%, whatever density is set to (more enemies still spawn).
 # firstcache: the first battleground cache you open in a run offers only legendary amulets.
 # luck: every race starts with 100% luck (Gnomes get their +20% on top).
-# mindflay: Mind Flay channels on every enemy in range, like Drain Life, instead of firing where you face.
+# mindflay: Mind Flay channels on every enemy within 30 yd (was 16), like Drain Life, instead of firing
+#   where you face.
 # lifesteal: Shaman, Mage and Druid start with 1% lifesteal (the other classes already have some).
 # cacherate: battleground caches spawn twice as often (every 35 sec instead of 70).
 # guardians: a slain guardian's lair spawns a new guardian at once instead of 3 minutes later.
 # dotcrit: every damage-over-time tick rolls your crit chance and deals your crit damage on a crit.
+# apparitions: Shadowy Apparitions procs from every damage-over-time tick, with no twice-a-second cap.
 _CMP = [1411633, 1411713, 1411926, 1413327, 2083186, 92748959, 92752017, 92752273, 92752574, 92796315,
         92805761, 93003212, 93006366, 93006494, 93006622, 93006750, 93006878, 93007006, 93007134, 93007266]
 _MOV = [1411640, 1411720, 1411933, 1413335, 92748966, 92752024, 92752280, 92752581, 92796323, 92805768,
@@ -368,6 +371,7 @@ PATCHES = {
         (112783296, "00000000", "00004040"),  # channel duration 0 -> 3 sec
         (112783300, "00000000", "03000000"),  # ticks 0 -> 3
         (112783325, "08", "06"),  # shape: cone -> on-target damage over time
+        (112783284, "00008041", "0000f041"),  # range 16 -> 30 yd
     ],
     # class records keep base lifesteal at +0x88; only Shaman, Mage and Druid have 0
     "lifesteal": [
@@ -410,6 +414,16 @@ PATCHES = {
         (93817201, "cccccccccccccccccccccccccc",
          "0fb6472688442428e97bdcfcff"),
     ],
+    # Shadowy Apparitions' proc (kind 0, trigger 4 = a tick lands): 4% for a free Mind Blast on Shadow Word:
+    # Pain ticks with a 0.5 sec cooldown. Drop the cooldown and the filter (type 0 = any ability, like Art of
+    # War), so every damage-over-time tick on every enemy can loose one; the talent text says so.
+    "apparitions": [
+        (119001392, "0000003f", "00000000"),  # proc cooldown 0.5 sec -> 0
+        (119001424, "01", "00"),  # proc filter: Shadow Word: Pain ticks -> any ability's ticks
+        (119001448, "4d696c6573746f6e652e20596f752073746172742065766572792072756e207769746820536861646f7720576f72643a205061696e20696e7374656164206f6620536d6974652c20616e6420697473207469636b7320686176652061207b767d25206368616e636520746f206c6f6f7365206120736861646f77792061707061726974696f6e3a20612066726565204d696e6420426c6173742c206174206d6f73742074776963652061207365636f6e642e",
+         "4d696c6573746f6e652e20596f752073746172742065766572792072756e207769746820536861646f7720576f72643a205061696e20696e7374656164206f6620536d6974652c20616e642065766572792064616d6167652d6f7665722d74696d65207469636b206861732061207b767d25206368616e636520746f206c6f6f7365206120736861646f77792061707061726974696f6e3a20612066726565204d696e6420426c6173742e00000000000000"),  # talent text
+        (119003304, "b200000000000000", "ab00000000000000"),  # talent text length
+    ],
 }
 DESCRIBE = {"talents": "talent cap 51 -> 129", "caches": "caches cost no gold",
             "bosses": "big bosses give a legendary treasure", "gold": "start every run with 20 gold",
@@ -418,11 +432,12 @@ DESCRIBE = {"talents": "talent cap 51 -> 129", "caches": "caches cost no gold",
             "tfvisual": "Chain Lightning looks like Thunderfury",
             "tfweapon": "starter Worn Dagger shows as Thunderfury", "density": "density up to 1000%, kill XP at 1/4, gold as at 100%", "firstcache": "first cache of a run: legendary amulets",
             "luck": "every race starts with 100% luck",
-            "mindflay": "Mind Flay hits every enemy in range",
+            "mindflay": "Mind Flay hits every enemy within 30 yd",
             "lifesteal": "1% lifesteal for Shaman, Mage and Druid",
             "cacherate": "caches spawn twice as often",
             "guardians": "slain guardians respawn at once",
-            "dotcrit": "damage-over-time ticks can crit"}
+            "dotcrit": "damage-over-time ticks can crit",
+            "apparitions": "Shadowy Apparitions: any DoT tick, no cap"}
 STOCK_SHA256 = "3b46bad92e7771afa61c93658fd850937834a40f3671af8b1a3e1d2aeb8b63c7"
 # edits from earlier releases that are always undone (the first "gold" patch hit the wrong field)
 RETIRED = [(93410230, "00000000", "14000000"),

@@ -33,7 +33,7 @@ next to the save (characters.txt.before-unlock-<date>.bak).
 
 2) Game patches (optional)
 --------------------------
-Seventeen patches for the game exe, use any combination:
+Eighteen patches for the game exe, use any combination:
 
   talents  The game normally stops at 51 talent points. Each class can now earn 129,
            enough to max all three talent trees.
@@ -68,8 +68,8 @@ Seventeen patches for the game exe, use any combination:
   firstcache  The first battleground cache you open in a run offers only
            legendary amulets, so you can pick the amulet your run is built around.
   luck     Every race starts with 100% luck (Gnomes keep their +20% on top).
-  mindflay Mind Flay channels on every enemy in range (like Drain Life does on
-           one), so you don't have to face your targets.
+  mindflay Mind Flay channels on every enemy within 30 yards (was 16), like
+           Drain Life does on one, so you don't have to face your targets.
   lifesteal  Shaman, Mage and Druid start with 1% lifesteal (the other classes
            already start with some).
   cacherate  Battleground caches spawn twice as often (every 35 sec, not 70).
@@ -78,8 +78,11 @@ Seventeen patches for the game exe, use any combination:
            growing stronger.
   dotcrit  Every damage-over-time tick rolls your crit chance and deals your
            crit damage when it crits, like a direct hit.
+  apparitions  Shadowy Apparitions: every damage-over-time tick on every enemy
+           can loose a free Mind Blast (not just Shadow Word: Pain), and the
+           twice-a-second cap is gone.
 
-Run from the game folder (no names = all seventeen patches):
+Run from the game folder (no names = all eighteen patches):
 
     python azs_tool.py patch
     python azs_tool.py patch talents
