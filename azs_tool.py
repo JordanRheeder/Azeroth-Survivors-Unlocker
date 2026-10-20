@@ -2,7 +2,7 @@
 """Azeroth Survivors save unlocker and game patcher.
 
   python azs_tool.py unlock [SAVE]                   unlock zones, gear, codex, achievements, talent XP
-  python azs_tool.py patch  [EXE] [talents] [caches] [bosses] [gold] [banish] [rerolls] [classes] [tfvisual] [tfweapon] [density] [firstcache]
+  python azs_tool.py patch  [EXE] [talents] [caches] [bosses] [gold] [banish] [rerolls] [classes] [tfvisual] [tfweapon] [density] [firstcache] [luck]
                                      patch the game (all of them if none is named):
                                        talents  talent cap 51 -> 129
                                        caches   battleground caches cost no gold
@@ -15,6 +15,7 @@
                                        tfweapon  starter Worn Dagger shows as Thunderfury
                                        density  kill XP/gold as at 100% density
                                        firstcache  first cache of a run: legendary amulets
+                                       luck     every race starts with 100% luck
   python azs_tool.py decode SAVE OUT / encode TXT SAVE
 
 SAVE defaults to the game's save (%APPDATA%\\wenilla-rogue\\characters.txt, or
@@ -196,6 +197,11 @@ def cmd_unlock(path=None):
 #   capstone also starts runs with Drain Life and Curse of Agony.
 # tfvisual: Chain Lightning uses WoW spell 21992 (Thunderfury) for its visuals and icon instead of
 #   421, so the proc looks like Thunderfury. Shaman Chain Lightning looks like it too.
+# tfweapon: the starter Worn Dagger shows as Thunderfury (name and model), for every hero that shows it.
+# density: kills give XP and gold as if enemy density were 100%, whatever it is set to (more
+#   enemies still spawn).
+# firstcache: the first battleground cache you open in a run offers only legendary amulets.
+# luck: every race starts with 100% luck (Gnomes get their +20% on top).
 _CMP = [1411633, 1411713, 1411926, 1413327, 2083186, 92748959, 92752017, 92752273, 92752574, 92796315,
         92805761, 93003212, 93006366, 93006494, 93006622, 93006750, 93006878, 93007006, 93007134, 93007266]
 _MOV = [1411640, 1411720, 1411933, 1413335, 92748966, 92752024, 92752280, 92752581, 92796323, 92805768,
@@ -314,13 +320,22 @@ PATCHES = {
         (93701525, "498b45004885c0",
          "e93e2bb7fa6690"),
     ],
+    # run setup stores (1,1,0,1) over four floats, the third being luck (+0x49c); detour that store into an
+    # int3 gap, then also write luck = 1.0 (100%), as if every race had +100% luck (Gnomes keep their +20%)
+    "luck": [
+        (5028702, "cccccccccccccccccccccccccccccccccccccccccccccc",
+         "440f119dc4040000c785cc0400000000803fe9d8984405"),
+        (93410373, "440f119dc4040000",
+         "e91467bbfa0f1f00"),
+    ],
 }
 DESCRIBE = {"talents": "talent cap 51 -> 129", "caches": "caches cost no gold",
             "bosses": "big bosses give a legendary treasure", "gold": "start every run with 20 gold",
             "banish": "20 banishes per run", "rerolls": "10 free rerolls per run",
             "classes": "class changes (Hunter Thunderfury + 7 slots, Shadow Priest and Affliction capstones)",
             "tfvisual": "Chain Lightning looks like Thunderfury",
-            "tfweapon": "starter Worn Dagger shows as Thunderfury", "density": "kill rewards ignore enemy density", "firstcache": "first cache of a run: legendary amulets"}
+            "tfweapon": "starter Worn Dagger shows as Thunderfury", "density": "kill rewards ignore enemy density", "firstcache": "first cache of a run: legendary amulets",
+            "luck": "every race starts with 100% luck"}
 STOCK_SHA256 = "3b46bad92e7771afa61c93658fd850937834a40f3671af8b1a3e1d2aeb8b63c7"
 # edits from earlier releases that are always undone (the first "gold" patch hit the wrong field)
 RETIRED = [(93410230, "00000000", "14000000"),

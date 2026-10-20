@@ -117,6 +117,9 @@
     <label class="opt"><input type="checkbox" id="optFirstcache" checked>
       <span><b>Legendary amulet first cache.</b> The first battleground cache you open in a run offers only legendary
         amulets, so you can pick the amulet your run is built around.</span></label>
+    <label class="opt"><input type="checkbox" id="optLuck" checked>
+      <span><b>100% luck.</b> Every race starts with 100% luck, as if it had a +100% luck racial (Gnomes keep their
+        +20% on top).</span></label>
     <label class="drop" id="exeDrop">
       <input type="file" id="exeFile" accept=".exe">
       Click to choose <b>AzerothSurvivors.exe</b>, or drop it here
@@ -432,9 +435,15 @@ const PATCHES = {
     [5042392, "cccccccccccccccccccccccccccccccccccccccccccccccccccccc", "498b45004183bea0060000017505b8010000004885c0e9a9d44805"],
     [93701525, "498b45004885c0", "e93e2bb7fa6690"],
   ],
+  // run setup stores (1,1,0,1) over four floats, the third being luck (+0x49c); detour that store into an int3
+  // gap, then also write luck = 1.0 (100%), as if every race had +100% luck (Gnomes keep their +20%)
+  luck: [
+    [5028702, "cccccccccccccccccccccccccccccccccccccccccccccc", "440f119dc4040000c785cc0400000000803fe9d8984405"],
+    [93410373, "440f119dc4040000", "e91467bbfa0f1f00"],
+  ],
 };
 const DESCRIBE = {talents: "talent cap 51 → 129", caches: "free battleground caches", bosses: "legendary treasure from big bosses", gold: "start every run with 20 gold", banish: "20 banishes per run", rerolls: "10 free rerolls per run", classes: "class changes", tfvisual: "Chain Lightning looks like Thunderfury",
-                  tfweapon: "Worn Dagger shows as Thunderfury", density: "kill rewards ignore density", firstcache: "legendary amulets in the first cache"};
+                  tfweapon: "Worn Dagger shows as Thunderfury", density: "kill rewards ignore density", firstcache: "legendary amulets in the first cache", luck: "100% luck for every race"};
 const STOCK_SHA256 = "3b46bad92e7771afa61c93658fd850937834a40f3671af8b1a3e1d2aeb8b63c7";
 // edits from earlier releases that are always undone (the first "gold" patch hit the wrong field)
 const RETIRED = [[93410230, "00000000", "14000000"],
@@ -547,10 +556,11 @@ const optTalents = document.getElementById("optTalents"), optCaches = document.g
       optClasses = document.getElementById("optClasses"),
       optTfvisual = document.getElementById("optTfvisual"),
       optTfweapon = document.getElementById("optTfweapon"), optDensity = document.getElementById("optDensity"),
-      optFirstcache = document.getElementById("optFirstcache");
+      optFirstcache = document.getElementById("optFirstcache"),
+      optLuck = document.getElementById("optLuck");
 let exe = null;  // {bytes, have}
 const chosen = () => [optTalents.checked && "talents", optCaches.checked && "caches", optBosses.checked && "bosses", optGold.checked && "gold", optBanish.checked && "banish", optRerolls.checked && "rerolls", optClasses.checked && "classes", optTfvisual.checked && "tfvisual",
-  optTfweapon.checked && "tfweapon", optDensity.checked && "density", optFirstcache.checked && "firstcache"].filter(Boolean);
+  optTfweapon.checked && "tfweapon", optDensity.checked && "density", optFirstcache.checked && "firstcache", optLuck.checked && "luck"].filter(Boolean);
 
 function refreshExe() {
   if (!exe) return;
@@ -561,7 +571,7 @@ function refreshExe() {
   else status(exeStatus, `Game version recognised.${already} Will add: ${todo.map(p => DESCRIBE[p]).join(", ")}.`, "ok");
   exeBtn.disabled = !todo.length;
 }
-[optTalents, optCaches, optBosses, optGold, optBanish, optRerolls, optClasses, optTfvisual, optTfweapon, optDensity, optFirstcache].forEach(cb => cb.addEventListener("change", refreshExe));
+[optTalents, optCaches, optBosses, optGold, optBanish, optRerolls, optClasses, optTfvisual, optTfweapon, optDensity, optFirstcache, optLuck].forEach(cb => cb.addEventListener("change", refreshExe));
 
 wireDrop(document.getElementById("exeDrop"), document.getElementById("exeFile"), async file => {
   exe = null; exeBtn.disabled = true;
