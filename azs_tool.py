@@ -2,11 +2,12 @@
 """Azeroth Survivors save unlocker and game patcher.
 
   python azs_tool.py unlock [SAVE]                   unlock zones, gear, codex, achievements, talent XP
-  python azs_tool.py patch  [EXE] [talents] [caches] [bosses]
-                                     patch the game (all three if none is named):
+  python azs_tool.py patch  [EXE] [talents] [caches] [bosses] [gold]
+                                     patch the game (all of them if none is named):
                                        talents  talent cap 51 -> 129
                                        caches   battleground caches cost no gold
                                        bosses   big bosses give a legendary treasure
+                                       gold     start every run with 20 gold
   python azs_tool.py decode SAVE OUT / encode TXT SAVE
 
 SAVE defaults to the game's save (%APPDATA%\\wenilla-rogue\\characters.txt, or
@@ -175,6 +176,7 @@ def cmd_unlock(path=None):
 #   1,000,000 instead of 0.25 (weights 60 : 25L : 10L^2 : 4L^3 : L^4), so it is legendary; picking a
 #   reward uses the mark up. Guardian and elite treasures roll as before. The new code lives in three
 #   int3 padding gaps in .text.
+# gold:    the run setup sets gold to 0; start every run with 20 instead.
 _CMP = [1411633, 1411713, 1411926, 1413327, 2083186, 92748959, 92752017, 92752273, 92752574, 92796315,
         92805761, 93003212, 93006366, 93006494, 93006622, 93006750, 93006878, 93007006, 93007134, 93007266]
 _MOV = [1411640, 1411720, 1411933, 1413335, 92748966, 92752024, 92752280, 92752581, 92796323, 92805768,
@@ -204,9 +206,10 @@ PATCHES = {
         (616, "48c80400",
          "00d00400"),
     ],
+    "gold": [(93410230, "00000000", "14000000")],                # run setup: gold = 0 -> 20
 }
 DESCRIBE = {"talents": "talent cap 51 -> 129", "caches": "caches cost no gold",
-            "bosses": "big bosses give a legendary treasure"}
+            "bosses": "big bosses give a legendary treasure", "gold": "start every run with 20 gold"}
 STOCK_SHA256 = "3b46bad92e7771afa61c93658fd850937834a40f3671af8b1a3e1d2aeb8b63c7"
 
 

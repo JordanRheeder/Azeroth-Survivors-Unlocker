@@ -33,7 +33,7 @@ next to the save (characters.txt.before-unlock-<date>.bak).
 
 2) Game patches (optional)
 --------------------------
-Three patches for the game exe, use any combination:
+Four patches for the game exe, use any combination:
 
   talents  The game normally stops at 51 talent points. Each class can now earn 129,
            enough to max all three talent trees.
@@ -44,8 +44,9 @@ Three patches for the game exe, use any combination:
   bosses   The big bosses that arrive every few minutes (Hogger and co.) normally give no
            treasure. Now each one gives a treasure with legendary rewards. Guardian and
            elite treasures stay as they were.
+  gold     Every run starts with 20 gold instead of none.
 
-Run from the game folder (no names = all three patches):
+Run from the game folder (no names = all four patches):
 
     python azs_tool.py patch
     python azs_tool.py patch talents
