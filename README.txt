@@ -33,7 +33,7 @@ next to the save (characters.txt.before-unlock-<date>.bak).
 
 2) Game patches (optional)
 --------------------------
-Seven patches for the game exe, use any combination:
+Eight patches for the game exe, use any combination:
 
   talents  The game normally stops at 51 talent points. Each class can now earn 129,
            enough to max all three talent trees.
@@ -52,8 +52,11 @@ Seven patches for the game exe, use any combination:
   thunderfury  The Hunter talent Frenzy keeps what it does and also gives every
            shot a 5% chance to cast a free Chain Lightning, with no cooldown. Spend
            a point in Frenzy in the Talents tab.
+  tfvisual Chain Lightning uses the Thunderfury spell's visuals and icon (WoW
+           spell 21992), so the proc looks like the real thing. Shaman Chain
+           Lightning looks like it too.
 
-Run from the game folder (no names = all seven patches):
+Run from the game folder (no names = all eight patches):
 
     python azs_tool.py patch
     python azs_tool.py patch talents

@@ -2,7 +2,7 @@
 """Azeroth Survivors save unlocker and game patcher.
 
   python azs_tool.py unlock [SAVE]                   unlock zones, gear, codex, achievements, talent XP
-  python azs_tool.py patch  [EXE] [talents] [caches] [bosses] [gold] [banish] [rerolls] [thunderfury]
+  python azs_tool.py patch  [EXE] [talents] [caches] [bosses] [gold] [banish] [rerolls] [thunderfury] [tfvisual]
                                      patch the game (all of them if none is named):
                                        talents  talent cap 51 -> 129
                                        caches   battleground caches cost no gold
@@ -11,6 +11,7 @@
                                        banish   20 banishes per run
                                        rerolls  10 free rerolls per run
                                        thunderfury  Hunter Frenzy also: 5% free Chain Lightning per shot
+                                       tfvisual  Chain Lightning looks like Thunderfury (Shaman too)
   python azs_tool.py decode SAVE OUT / encode TXT SAVE
 
 SAVE defaults to the game's save (%APPDATA%\\wenilla-rogue\\characters.txt, or
@@ -188,6 +189,8 @@ def cmd_unlock(path=None):
 # thunderfury: the Hunter talent Frenzy keeps what it does and also gives every shot a 5% chance to
 #   cast a free Chain Lightning, no cooldown. It uses the game's own proc system (the same kind of
 #   effect as Omen of Clarity), so the free cast goes through the normal cast path.
+# tfvisual: Chain Lightning uses WoW spell 21992 (Thunderfury) for its visuals and icon instead of
+#   421, so the proc looks like Thunderfury. Shaman Chain Lightning looks like it too.
 _CMP = [1411633, 1411713, 1411926, 1413327, 2083186, 92748959, 92752017, 92752273, 92752574, 92796315,
         92805761, 93003212, 93006366, 93006494, 93006622, 93006750, 93006878, 93007006, 93007134, 93007266]
 _MOV = [1411640, 1411720, 1411933, 1413335, 92748966, 92752024, 92752280, 92752581, 92796323, 92805768,
@@ -253,11 +256,15 @@ PATCHES = {
         (444, "d8aa1300",
          "e4aa1300"),
     ],
+    # Chain Lightning's WoW spell id (used for its visuals and icon) 421 -> 21992 "Thunderfury";
+    # affects every Chain Lightning, the Shaman's too
+    "tfvisual": [(112783872, "a5010000", "e8550000")],
 }
 DESCRIBE = {"talents": "talent cap 51 -> 129", "caches": "caches cost no gold",
             "bosses": "big bosses give a legendary treasure", "gold": "start every run with 20 gold",
             "banish": "20 banishes per run", "rerolls": "10 free rerolls per run",
-            "thunderfury": "Hunter Frenzy also procs Thunderfury (5% free Chain Lightning per shot)"}
+            "thunderfury": "Hunter Frenzy also procs Thunderfury (5% free Chain Lightning per shot)",
+            "tfvisual": "Chain Lightning looks like Thunderfury"}
 STOCK_SHA256 = "3b46bad92e7771afa61c93658fd850937834a40f3671af8b1a3e1d2aeb8b63c7"
 # edits from earlier releases that are always undone (the first "gold" patch hit the wrong field)
 RETIRED = [(93410230, "00000000", "14000000"),
