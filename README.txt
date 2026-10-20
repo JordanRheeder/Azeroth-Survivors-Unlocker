@@ -52,7 +52,8 @@ Fifteen patches for the game exe, use any combination:
   classes  Hunter: every Auto Shot forks to 2 enemies and chains to 3 more, each
            for its full damage; 5% of them hit 4 more on top (Thunderfury), and
            5% slow their target by 20% for 5 sec; Hunters can hold 7 abilities.
-           Frenzy carries this, so spend a point in it. Shadow Priest: the Shadowform capstone also
+           Frenzy carries this, so spend a point in it (Piercing Shots' single
+           extra hit is folded into it). Shadow Priest: the Shadowform capstone also
            starts runs with Devouring Plague, Mind Flay and Mind Blast. Affliction
            Warlock: the Seed of Corruption capstone also starts runs with Drain
            Life and Curse of Agony.

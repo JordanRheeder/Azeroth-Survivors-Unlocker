@@ -258,7 +258,9 @@ PATCHES = {
     #    so a detour on the leap check rolls rdtsc & 0xffff against the entry's unused +0x0c (0 everywhere
     #    else; Thunderfury's 62259 = 95% skip) and keeps scanning on a miss. The leap picks the nearest
     #    enemies around the target; a second detour draws hops 3+ from the previous victim instead of the
-    #    target, so the first 2 fork and the rest chain. List and description live past .text's VirtualSize. Hunters may hold 7 abilities (detour on the
+    #    target, so the first 2 fork and the rest chain. Only the first leap entry that matches a hit fires, so
+    #    Piercing Shots' own Auto Shot leap (1 enemy, 80%) gets a skip threshold above any roll.
+    #    List and description live past .text's VirtualSize. Hunters may hold 7 abilities (detour on the
     #    level-up "cmp rsi,5" checking class byte [state+0x29c] == 3).
     #  - Shadow Priest: Shadowform capstone also starts with Devouring Plague, Mind Flay, Mind Blast
     #    (6-entry list in .pdata's file slack).
@@ -266,6 +268,7 @@ PATCHES = {
     #    (4-entry list in .rsrc's file slack).
     #  The three lists' pointers get .reloc blocks (the image uses ASLR); the sections grow to cover them.
     "classes": [
+        (118977860, "00000000", "ffffffff"),  # Piercing Shots' Auto Shot leap: always skipped (fork/chain covers it)
         (444, "d8aa1300",
          "0cab1300"),
         (536, "6ec4d405",
