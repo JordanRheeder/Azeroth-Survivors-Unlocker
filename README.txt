@@ -50,8 +50,9 @@ Eight patches for the game exe, use any combination:
   rerolls  Every run starts with 10 free rerolls, whatever your perk rank. After
            those, rerolls cost gold as usual.
   thunderfury  The Hunter talent Frenzy keeps what it does and also gives every
-           shot a 5% chance to cast a free Chain Lightning, with no cooldown. Spend
-           a point in Frenzy in the Talents tab.
+           shot a 5% chance to cast a free Chain Lightning, with no cooldown, which
+           slows what it hits by 20% for 12 sec. Spend a point in Frenzy in the
+           Talents tab.
   tfvisual Chain Lightning uses the Thunderfury spell's visuals and icon (WoW
            spell 21992), so the proc looks like the real thing. Shaman Chain
            Lightning looks like it too.
