@@ -41,6 +41,7 @@ Four patches for the game exe, use any combination:
            goes to rerolls. The cache price also stops climbing; reroll and skip prices
            are tied to it, so they stay at their starting level. Walk over a cache to open
            it: one opens at a time, and any others stay on the ground until you've picked.
+           The HUD shows the cache price as 0.
   bosses   The big bosses that arrive every few minutes (Hogger and co.) normally give no
            treasure. Now each one gives a treasure with legendary rewards. Guardian and
            elite treasures stay as they were.

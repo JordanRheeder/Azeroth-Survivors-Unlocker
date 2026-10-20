@@ -169,14 +169,15 @@ def cmd_unlock(path=None):
 # caches:  in the cache purchase routine, skip the "needs gold" check, take no gold, and keep
 #   the price from climbing (reroll and skip prices are derived from it). Walking over a cache
 #   only opens it when no cache treasure is already queued, so the treasure window closes after
-#   each pick instead of chaining through every cache picked up at once.
+#   each pick instead of chaining through every cache picked up at once. Caches start a run at
+#   price 0 (was 20), so the HUD shows them as free; rerolls/skips use their minimums either way.
 # bosses:  big bosses (Hogger and co.) normally give no treasure. On a boss kill, also queue the
 #   bonus treasure guardians give and count it in a "boss treasures" counter (a spare dword at the
 #   end of .data). When that treasure is dealt and the counter is set, its rarity-roll luck bonus is
 #   1,000,000 instead of 0.25 (weights 60 : 25L : 10L^2 : 4L^3 : L^4), so it is legendary; picking a
 #   reward uses the mark up. Guardian and elite treasures roll as before. The new code lives in three
 #   int3 padding gaps in .text.
-# gold:    the run setup sets gold to 0; start every run with 20 instead.
+# gold:    the run setup zeroes shield and gold together; start every run with 20 gold instead.
 _CMP = [1411633, 1411713, 1411926, 1413327, 2083186, 92748959, 92752017, 92752273, 92752574, 92796315,
         92805761, 93003212, 93006366, 93006494, 93006622, 93006750, 93006878, 93007006, 93007134, 93007266]
 _MOV = [1411640, 1411720, 1411933, 1413335, 92748966, 92752024, 92752280, 92752581, 92796323, 92805768,
@@ -187,7 +188,8 @@ PATCHES = {
                (93639592, "0f82c6000000", "660f1f440000"),       # jb needs-gold           -> nop
                (93639659, "899698090000", "660f1f440000"),       # store new price         -> nop
                (93450587, "80b9c709000000", "83b95809000000"),   # walk-over: click option -> treasure queued?
-               (93450596, "80b9ca09000000", "ebaa0f1f440000")],  # queued: leave it on the ground
+               (93450596, "80b9ca09000000", "ebaa0f1f440000"),   # queued: leave it on the ground
+               (93411154, "14000000", "00000000")],              # run setup: cache price 20 -> 0
     # cave A (big boss killed), cave B (deal bonus treasure), cave C (reward picked), their three
     # hooks, and the .data VirtualSize (0x4c848 -> 0x4d000) so the counter at 0x147fe0ff0 is in-section
     "bosses": [
@@ -206,16 +208,25 @@ PATCHES = {
         (616, "48c80400",
          "00d00400"),
     ],
-    "gold": [(93410230, "00000000", "14000000")],                # run setup: gold = 0 -> 20
+    # run setup zeroes shield+gold with one qword store; detour it into the int3 gap after cave A:
+    # shield = 0, gold = 20, jump back
+    "gold": [(5078311, "cccccccccccccccccccccccccccccccccccccccccccccccccc",
+              "c7854c04000000000000c7855004000014000000e9cbd64305"),
+             (93410304, "48c7854c04000000000000", "e92229bcfa660f1f440000")],
 }
 DESCRIBE = {"talents": "talent cap 51 -> 129", "caches": "caches cost no gold",
             "bosses": "big bosses give a legendary treasure", "gold": "start every run with 20 gold"}
 STOCK_SHA256 = "3b46bad92e7771afa61c93658fd850937834a40f3671af8b1a3e1d2aeb8b63c7"
+# edits from earlier releases that are always undone (the first "gold" patch hit the wrong field)
+RETIRED = [(93410230, "00000000", "14000000")]
 
 
 def _state(d):
     """Patches fully applied to d, or None if d is not the supported build (with any of our edits)."""
     stock = bytearray(d)
+    for off, old, new in RETIRED:
+        if stock[off:off + len(new) // 2].hex() == new:
+            stock[off:off + len(old) // 2] = bytes.fromhex(old)
     have = set()
     for name, edits in PATCHES.items():
         applied = 0
@@ -238,8 +249,11 @@ def cmd_patch(*args):
     if have is None:
         sys.exit("this AzerothSurvivors.exe is a different version than the patches were made for; not touching it")
     todo = [p for p in want if p not in have]
-    if not todo:
+    retired = [(o, old) for o, old, new in RETIRED if d[o:o + len(new) // 2].hex() == new]
+    if not todo and not retired:
         return print("already patched: " + ", ".join(DESCRIBE[p] for p in want))
+    for off, old in retired:
+        d[off:off + len(old) // 2] = bytes.fromhex(old)
     for p in todo:
         for off, old, new in PATCHES[p]:
             d[off:off + len(new) // 2] = bytes.fromhex(new)  # also completes a partly applied older patch
