@@ -1,0 +1,415 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Azeroth Survivors Unlocker</title>
+<style>
+  :root {
+    --bg: #f6f3ee; --panel: #ffffff; --ink: #1f1b16; --muted: #6b6258; --line: #e3ddd3;
+    --accent: #b8860b; --accent-ink: #ffffff; --ok: #2e7d32; --err: #c62828; --code: #f0ebe3;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #15130f; --panel: #1f1c17; --ink: #efe8dc; --muted: #a39887; --line: #34302a;
+      --accent: #e0b04a; --accent-ink: #1a1408; --ok: #7bc77f; --err: #ef7a7a; --code: #2a2620;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #15130f; --panel: #1f1c17; --ink: #efe8dc; --muted: #a39887; --line: #34302a;
+    --accent: #e0b04a; --accent-ink: #1a1408; --ok: #7bc77f; --err: #ef7a7a; --code: #2a2620;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+         font: 15px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 760px; margin: 0 auto; padding: 32px 16px 48px; }
+  h1 { font-size: 26px; margin: 0 0 4px; letter-spacing: -0.01em; }
+  .sub { color: var(--muted); margin: 0 0 24px; }
+  section { background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+            padding: 20px; margin-bottom: 16px; }
+  h2 { font-size: 18px; margin: 0 0 6px; display: flex; gap: 10px; align-items: baseline; }
+  h2 .n { color: var(--accent); font-variant-numeric: tabular-nums; }
+  p { margin: 6px 0; }
+  ul { margin: 6px 0 10px; padding-left: 20px; }
+  code { background: var(--code); padding: 1px 5px; border-radius: 4px; font-size: 13px; word-break: break-all; }
+  .drop { display: block; margin-top: 12px; border: 2px dashed var(--line); border-radius: 10px; padding: 18px;
+          text-align: center; color: var(--muted); cursor: pointer; transition: border-color .15s; }
+  .drop.over, .drop:hover { border-color: var(--accent); color: var(--ink); }
+  .drop input { display: none; }
+  .status { margin-top: 12px; min-height: 1.5em; white-space: pre-line; }
+  .status.ok { color: var(--ok); } .status.err { color: var(--err); }
+  button { margin-top: 12px; background: var(--accent); color: var(--accent-ink); border: 0;
+           border-radius: 8px; padding: 10px 16px; font: inherit; font-weight: 600; cursor: pointer; }
+  button[disabled] { opacity: .45; cursor: default; }
+  .opt { display: flex; gap: 10px; align-items: flex-start; margin-top: 10px; cursor: pointer; }
+  .opt input { margin-top: 4px; accent-color: var(--accent); width: 16px; height: 16px; flex: none; }
+  details { margin-top: 10px; color: var(--muted); }
+  summary { cursor: pointer; }
+  .foot { color: var(--muted); font-size: 13px; text-align: center; margin-top: 20px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Azeroth Survivors Unlocker</h1>
+  <p class="sub">Runs entirely in this page, offline. Nothing is uploaded. <b>Close the game first.</b></p>
+
+  <section>
+    <h2><span class="n">1</span> Unlock everything in your save</h2>
+    <p>Pick your <code>characters.txt</code>. On Windows it is in
+      <code>%APPDATA%\wenilla-rogue\</code> (paste that into the Explorer address bar). With
+      Proton/Linux it is in <code>&lt;prefix&gt;/drive_c/users/steamuser/AppData/Roaming/wenilla-rogue/</code>.</p>
+    <ul>
+      <li>every zone opened and beaten for all 9 classes, Naxxramas included</li>
+      <li>all gear pieces, every ring/trinket/amulet in the codex</li>
+      <li>every achievement, which unlocks the perks, companions and tabards behind them</li>
+      <li>enough talent experience for every talent point</li>
+    </ul>
+    <label class="drop" id="saveDrop">
+      <input type="file" id="saveFile" accept=".txt,text/plain">
+      Click to choose <b>characters.txt</b>, or drop it here
+    </label>
+    <div class="status" id="saveStatus"></div>
+    <button id="saveBtn" disabled>Download unlocked characters.txt</button>
+    <details><summary>Then what?</summary>
+      <p>Make a copy of your old <code>characters.txt</code> somewhere safe, then replace it with
+        the downloaded one (it lands in your Downloads folder; if the browser names it
+        <code>characters (1).txt</code>, rename it to <code>characters.txt</code>). Start the game.</p>
+    </details>
+  </section>
+
+  <section>
+    <h2><span class="n">2</span> Game patches <span style="color:var(--muted);font-size:14px;font-weight:400">optional</span></h2>
+    <p>Choose what to change, then pick <code>AzerothSurvivors.exe</code> from the game folder. Only the exact
+      version these were made for is accepted (an exe already patched here is fine).</p>
+    <label class="opt"><input type="checkbox" id="optTalents" checked>
+      <span><b>Talent cap 51 &rarr; 129.</b> Each class can earn enough points to max all three talent trees.</span></label>
+    <label class="opt"><input type="checkbox" id="optCaches" checked>
+      <span><b>Free battleground caches.</b> Opening a cache costs no gold, so your gold is all for rerolls. The
+        cache price stops climbing too, which keeps reroll prices (tied to it) at their starting level.</span></label>
+    <label class="drop" id="exeDrop">
+      <input type="file" id="exeFile" accept=".exe">
+      Click to choose <b>AzerothSurvivors.exe</b>, or drop it here
+    </label>
+    <div class="status" id="exeStatus"></div>
+    <button id="exeBtn" disabled>Download patched AzerothSurvivors.exe</button>
+    <details><summary>Then what?</summary>
+      <p>Rename the original to <code>AzerothSurvivors.exe.orig</code> as a backup, then put the downloaded
+        <code>AzerothSurvivors.exe</code> in the game folder. If the game updates itself, patch again.</p>
+    </details>
+  </section>
+
+  <p class="foot">To undo: put your backup <code>characters.txt</code> / <code>AzerothSurvivors.exe.orig</code> back.</p>
+</main>
+
+<script>
+"use strict";
+// ---------------------------------------------------------------- hashes (pure JS, works from file://)
+function rotl(x, n) { return (x << n) | (x >>> (32 - n)); }
+
+function sha1(bytes) {
+  const ml = bytes.length, nb = ((ml + 9 + 63) >> 6) << 6, m = new Uint8Array(nb);
+  m.set(bytes); m[ml] = 0x80;
+  const dv = new DataView(m.buffer);
+  dv.setUint32(nb - 4, (ml * 8) >>> 0); dv.setUint32(nb - 8, Math.floor(ml / 0x20000000));
+  let h0 = 0x67452301, h1 = 0xEFCDAB89, h2 = 0x98BADCFE, h3 = 0x10325476, h4 = 0xC3D2E1F0;
+  const w = new Int32Array(80);
+  for (let o = 0; o < nb; o += 64) {
+    for (let i = 0; i < 16; i++) w[i] = dv.getInt32(o + i * 4);
+    for (let i = 16; i < 80; i++) w[i] = rotl(w[i-3] ^ w[i-8] ^ w[i-14] ^ w[i-16], 1);
+    let a = h0, b = h1, c = h2, d = h3, e = h4;
+    for (let i = 0; i < 80; i++) {
+      let f, k;
+      if (i < 20) { f = (b & c) | (~b & d); k = 0x5A827999; }
+      else if (i < 40) { f = b ^ c ^ d; k = 0x6ED9EBA1; }
+      else if (i < 60) { f = (b & c) | (b & d) | (c & d); k = 0x8F1BBCDC; }
+      else { f = b ^ c ^ d; k = 0xCA62C1D6; }
+      const t = (rotl(a, 5) + f + e + k + w[i]) | 0;
+      e = d; d = c; c = rotl(b, 30); b = a; a = t;
+    }
+    h0 = (h0 + a) | 0; h1 = (h1 + b) | 0; h2 = (h2 + c) | 0; h3 = (h3 + d) | 0; h4 = (h4 + e) | 0;
+  }
+  const out = new Uint8Array(20), ov = new DataView(out.buffer);
+  [h0, h1, h2, h3, h4].forEach((h, i) => ov.setInt32(i * 4, h));
+  return out;
+}
+
+const K256 = new Int32Array([
+  0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,0xd807aa98,0x12835b01,
+  0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,
+  0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,
+  0x06ca6351,0x14292967,0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,
+  0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,0x19a4c116,0x1e376c08,
+  0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,
+  0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2]);
+
+// streaming SHA-256 over a big buffer, yielding to the UI now and then
+async function sha256Hex(bytes, onProgress) {
+  const ml = bytes.length, tailLen = ((ml % 64) + 9 + 63 >> 6) << 6;
+  const full = ml - (ml % 64);
+  const tail = new Uint8Array(tailLen); tail.set(bytes.subarray(full)); tail[ml - full] = 0x80;
+  const tv = new DataView(tail.buffer);
+  tv.setUint32(tailLen - 4, (ml * 8) >>> 0); tv.setUint32(tailLen - 8, Math.floor(ml / 0x20000000));
+  const H = new Int32Array([0x6a09e667,0xbb67ae85,0x3c6ef372,0xa54ff53a,0x510e527f,0x9b05688c,0x1f83d9ab,0x5be0cd19]);
+  const w = new Int32Array(64);
+  const dvMain = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  function block(dv, o) {
+    for (let i = 0; i < 16; i++) w[i] = dv.getInt32(o + i * 4);
+    for (let i = 16; i < 64; i++) {
+      const x = w[i-15], y = w[i-2];
+      const s0 = ((x >>> 7) | (x << 25)) ^ ((x >>> 18) | (x << 14)) ^ (x >>> 3);
+      const s1 = ((y >>> 17) | (y << 15)) ^ ((y >>> 19) | (y << 13)) ^ (y >>> 10);
+      w[i] = (w[i-16] + s0 + w[i-7] + s1) | 0;
+    }
+    let a = H[0], b = H[1], c = H[2], d = H[3], e = H[4], f = H[5], g = H[6], h = H[7];
+    for (let i = 0; i < 64; i++) {
+      const S1 = ((e >>> 6) | (e << 26)) ^ ((e >>> 11) | (e << 21)) ^ ((e >>> 25) | (e << 7));
+      const t1 = (h + S1 + ((e & f) ^ (~e & g)) + K256[i] + w[i]) | 0;
+      const S0 = ((a >>> 2) | (a << 30)) ^ ((a >>> 13) | (a << 19)) ^ ((a >>> 22) | (a << 10));
+      const t2 = (S0 + ((a & b) ^ (a & c) ^ (b & c))) | 0;
+      h = g; g = f; f = e; e = (d + t1) | 0; d = c; c = b; b = a; a = (t1 + t2) | 0;
+    }
+    H[0] = (H[0] + a) | 0; H[1] = (H[1] + b) | 0; H[2] = (H[2] + c) | 0; H[3] = (H[3] + d) | 0;
+    H[4] = (H[4] + e) | 0; H[5] = (H[5] + f) | 0; H[6] = (H[6] + g) | 0; H[7] = (H[7] + h) | 0;
+  }
+  const STEP = 64 * 65536;
+  for (let o = 0; o < full; ) {
+    const end = Math.min(full, o + STEP);
+    for (; o < end; o += 64) block(dvMain, o);
+    if (onProgress) onProgress(o / ml);
+    await new Promise(r => setTimeout(r, 0));
+  }
+  for (let o = 0; o < tailLen; o += 64) block(tv, o);
+  return Array.from(H, x => (x >>> 0).toString(16).padStart(8, "0")).join("");
+}
+
+// ---------------------------------------------------------------- save codec
+// "RSE1:" + base64( nonce[16] || ciphertext || tag[20] ), HMAC-SHA1 keyed with the game's key
+const KEY = concat(new TextEncoder().encode("azeroth-survivors/save/v1/"), hex("9c4e27d16af013b85de2710ca936c48f"));
+function hex(s) { return new Uint8Array(s.match(/../g).map(b => parseInt(b, 16))); }
+function concat(...parts) {
+  const out = new Uint8Array(parts.reduce((n, p) => n + p.length, 0)); let o = 0;
+  for (const p of parts) { out.set(p, o); o += p.length; }
+  return out;
+}
+const IPAD = new Uint8Array(64), OPAD = new Uint8Array(64);
+for (let i = 0; i < 64; i++) { IPAD[i] = (KEY[i] || 0) ^ 0x36; OPAD[i] = (KEY[i] || 0) ^ 0x5c; }
+function hmac(...parts) { return sha1(concat(OPAD, sha1(concat(IPAD, ...parts)))); }
+function u64le(n) { const b = new Uint8Array(8); new DataView(b.buffer).setUint32(0, n, true); return b; }
+const ASCII = s => new TextEncoder().encode(s);
+
+function xorStream(nonce, data) {
+  const out = new Uint8Array(data);
+  for (let i = 0; i < out.length; i += 20) {
+    const ks = hmac(ASCII("ks"), nonce, u64le(i / 20));
+    for (let j = 0; j < 20 && i + j < out.length; j++) out[i + j] ^= ks[j];
+  }
+  return out;
+}
+function b64dec(s) { const bin = atob(s); const u = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i); return u; }
+function b64enc(u) { let s = ""; for (let i = 0; i < u.length; i += 0x8000) s += String.fromCharCode.apply(null, u.subarray(i, i + 0x8000)); return btoa(s); }
+
+function decodeSave(text) {
+  text = text.trim();
+  if (!text.startsWith("RSE1:")) {
+    if (/^(pick|open|items|talent|hero)\|/m.test(text)) return text;  // already unsealed
+    throw new Error("This doesn't look like an Azeroth Survivors save.");
+  }
+  const raw = b64dec(text.slice(5));
+  const nonce = raw.subarray(0, 16), ct = raw.subarray(16, raw.length - 20), tag = raw.subarray(raw.length - 20);
+  const want = hmac(ASCII("tag"), nonce, ct);
+  if (!want.every((b, i) => b === tag[i])) throw new Error("The save is damaged (its check code does not match).");
+  return new TextDecoder("utf-8", { fatal: true }).decode(xorStream(nonce, ct));
+}
+function encodeSave(plain) {
+  const nonce = crypto.getRandomValues(new Uint8Array(16));
+  const ct = xorStream(nonce, new TextEncoder().encode(plain));
+  return "RSE1:" + b64enc(concat(nonce, ct, hmac(ASCII("tag"), nonce, ct)));
+}
+
+// ---------------------------------------------------------------- unlock
+const CLASSES = {1: "warrior", 2: "paladin", 3: "hunter", 4: "rogue", 5: "priest", 7: "shaman", 8: "mage", 9: "warlock", 11: "druid"};
+const WEAPONS = {1: 1, 2: 1, 3: 1, 4: 2, 5: 1, 7: 2, 8: 1, 9: 1, 11: 1};
+const ZONES = ["elwynn", "duskwood", "wsg", "ungoro", "ab", "feralas", "arena", "sm", "av", "brm", "aq", "naxx"];
+const CODEX = ["accuria", "quick_strike", "dark_iron", "dragonslayer", "archimtiros", "devoured", "spell_power",
+  "seal_damned", "blooddrinker", "earthstrike", "tep", "lifegiving", "hoj", "blackhand", "carrot", "remote", "insignia",
+  "eldre_thalas", "chosen", "onyxia_blood", "war_horn", "soulstone", "mark_of_fordring", "star_of_mystaria", "talvash",
+  "south_seas_kelp", "prestor", "animated_chain", "woven_ivy", "darkmoon", "jeklik", "eye_of_hakkar", "steadfast_might",
+  "enlightenment", "vek_nilash", "fallen_dragon", "malice_stone", "onyxia_tooth", "fire_lord"];
+const CN = Object.values(CLASSES);
+const ACHIEVEMENTS = [
+  ...CN.map(c => "class:" + c), ...CN.map(c => "classlast:" + c),
+  ...ZONES.map(z => "zone:" + z), ...ZONES.map(z => "zone9:" + z),
+  "talents:1", "talents:9", "pieces:25", "pieces:100", "pieces:250", "pieces:all", "legendaryset", "codex:50", "codex:100",
+  ...["kills2500", "kills6000", "lairs", "endless25", "endless30", "endless40", "bare", "thrifty", "odds", "nou"].map(f => "feat:" + f),
+  ...["kills10k", "kills100k", "kills1m", "gold5k", "gold50k", "guardians100", "guardians500", "bosses100", "caches100",
+      "runs10", "runs100", "wins50"].map(c => "count:" + c)];
+const STAT_MIN = {kills: 1000000, gold: 50000, guardians: 500, bosses: 100, runs: 100, wins: 50, caches: 100};
+const TALENT_XP = 134160;  // all 129 points with the patched exe (23205 covers the stock 51)
+
+const kv = s => new Map(s.split(",").filter(Boolean).map(x => { const i = x.indexOf("="); return [x.slice(0, i), x.slice(i + 1)]; }));
+const sortedKeys = m => [...m.keys()].sort();  // same order as Python's sorted() for these ASCII keys
+
+function unlock(plain) {
+  const lines = plain.replace(/\n+$/, "").split("\n").filter(Boolean);
+  const items = new Set();
+  for (const [c, w] of Object.entries(WEAPONS))
+    for (let p = 0; p < 8 + w; p++) for (let t = 0; t < 6; t++) items.add(100000 + c * 1000 + p * 100 + t * 10);
+  const now = String(Math.floor(Date.now() / 1000));
+  const single = {items: "", seen: "", ach: "", achat: "", stat: ""};
+  const out = [], talents = new Map();
+  for (const l of lines) {
+    const i = l.indexOf("|"), tag = i < 0 ? l : l.slice(0, i), rest = i < 0 ? "" : l.slice(i + 1);
+    if (tag === "open" || tag === "beat") continue;
+    if (tag in single) { single[tag] = rest; out.push({fill: tag}); }
+    else if (tag === "talent") {
+      const [c, xp, ...spent] = rest.split("|");
+      talents.set(c, [parseInt(xp, 10), spent.join("|")]); out.push({talent: c});
+    } else out.push(l);
+  }
+  for (const x of single.items.split(",")) if (x) items.add(parseInt(x, 10));
+  const seen = kv(single.seen); CODEX.forEach(k => seen.set(k, "4"));
+  const ach = new Set([...single.ach.split(",").filter(Boolean), ...ACHIEVEMENTS]);
+  const achat = kv(single.achat); ACHIEVEMENTS.forEach(k => { if (!achat.has(k)) achat.set(k, now); });
+  const stat = kv(single.stat);
+  for (const [k, v] of Object.entries(STAT_MIN)) stat.set(k, String(Math.max(parseInt(stat.get(k) || "0", 10), v)));
+  const filled = {
+    items: "items|" + [...items].sort((a, b) => a - b).join(","),
+    seen: "seen|" + sortedKeys(seen).map(k => k + "=" + seen.get(k)).join(","),
+    ach: "ach|" + [...ach].sort().join(","),
+    achat: "achat|" + sortedKeys(achat).map(k => k + "=" + achat.get(k)).join(","),
+    stat: "stat|" + [...stat].map(([k, v]) => k + "=" + v).join(","),
+  };
+  const res = [];
+  for (const l of out) {
+    if (l.fill) { res.push(filled[l.fill]); delete filled[l.fill]; }
+    else if (l.talent) { const [xp, spent] = talents.get(l.talent); res.push(`talent|${l.talent}|${Math.max(xp, TALENT_XP)}|${spent}`); }
+    else res.push(l);
+  }
+  res.push(...Object.values(filled));
+  for (const c of Object.keys(CLASSES)) if (!talents.has(c)) res.push(`talent|${c}|${TALENT_XP}|`);
+  for (const c of Object.keys(CLASSES)) res.push(`open|${c}|naxx`);
+  for (const c of Object.keys(CLASSES)) res.push(`beat|${c}|` + ZONES.join(","));
+  return res.join("\n") + "\n";
+}
+
+// ---------------------------------------------------------------- exe patches
+// Each patch is a list of [file offset, original bytes, patched bytes] for one exact game build.
+// talents: point n costs 80 + 15*n XP; the counting loop stops at `cmp reg, 0x36b` and returns 51.
+//          Raise both to 129 points (bound 0x7fd).
+// caches:  in the cache purchase routine, skip the "needs gold" check, take no gold, and keep the
+//          price from climbing (reroll and skip prices are derived from it).
+const EXE_SIZE = 139728384;
+const CMP_OFF = [1411633, 1411713, 1411926, 1413327, 2083186, 92748959, 92752017, 92752273, 92752574, 92796315,
+  92805761, 93003212, 93006366, 93006494, 93006622, 93006750, 93006878, 93007006, 93007134, 93007266];
+const MOV_OFF = [1411640, 1411720, 1411933, 1413335, 92748966, 92752024, 92752280, 92752581, 92796323, 92805768,
+  93003220, 93006374, 93006502, 93006630, 93006758, 93006886, 93007014, 93007142, 93007274];
+const PATCHES = {
+  talents: [...CMP_OFF.map(o => [o, "6b030000", "fd070000"]), ...MOV_OFF.map(o => [o, "33000000", "81000000"])],
+  caches: [[93639589, "4429f8", "0f1f00"], [93639592, "0f82c6000000", "660f1f440000"], [93639659, "899698090000", "660f1f440000"]],
+};
+const DESCRIBE = {talents: "talent cap 51 → 129", caches: "free battleground caches"};
+// sha256 of the game build for each set of applied patches (key: sorted patch names)
+const KNOWN = {
+  "": "3b46bad92e7771afa61c93658fd850937834a40f3671af8b1a3e1d2aeb8b63c7",
+  "caches": "beae4b6e54162a2a8cbc4dc4c822f51e138c9f3ce08f451122e5ed32beb5b0f0",
+  "talents": "707833b608765073160adce3681048bec7b5e73c20ae568d131f29b09b8ea1c4",
+  "caches,talents": "0117a217f568f696a05cdebb41bfa5658a041b9be7fc210e3f5960a7f2748b19",
+};
+const WRONG_VERSION = "This AzerothSurvivors.exe is a different version than these patches were made for. Nothing was changed.";
+
+// which patches a game exe already has, or throws if it is not a known build
+async function identifyExe(bytes, onProgress) {
+  if (bytes.length !== EXE_SIZE) throw new Error(WRONG_VERSION);
+  const h = await sha256Hex(bytes, onProgress);
+  const key = Object.keys(KNOWN).find(k => KNOWN[k] === h);
+  if (key === undefined) throw new Error(WRONG_VERSION);
+  return key ? key.split(",") : [];
+}
+
+// apply `want` on top of `have` (both arrays of patch names); returns a new byte array
+async function patchExe(bytes, have, want, onProgress) {
+  const out = new Uint8Array(bytes);
+  for (const p of want.filter(p => !have.includes(p)))
+    for (const [o, old, neu] of PATCHES[p]) {
+      const cur = Array.from(out.subarray(o, o + old.length / 2), b => b.toString(16).padStart(2, "0")).join("");
+      if (cur !== old) throw new Error("unexpected bytes");
+      out.set(hex(neu), o);
+    }
+  const key = [...new Set([...have, ...want])].sort().join(",");
+  if (await sha256Hex(out, onProgress) !== KNOWN[key]) throw new Error("self-check failed");
+  return out;
+}
+
+// ---------------------------------------------------------------- UI
+function download(name, data, type) {
+  const url = URL.createObjectURL(new Blob([data], {type}));
+  const a = Object.assign(document.createElement("a"), {href: url, download: name});
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
+}
+function status(el, msg, kind) { el.textContent = msg; el.className = "status" + (kind ? " " + kind : ""); }
+function wireDrop(drop, input, onFile) {
+  input.addEventListener("change", () => input.files[0] && onFile(input.files[0]));
+  ["dragenter", "dragover"].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add("over"); }));
+  ["dragleave", "drop"].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove("over"); }));
+  drop.addEventListener("drop", e => e.dataTransfer.files[0] && onFile(e.dataTransfer.files[0]));
+}
+
+const saveStatus = document.getElementById("saveStatus"), saveBtn = document.getElementById("saveBtn");
+let unlockedSave = null;
+wireDrop(document.getElementById("saveDrop"), document.getElementById("saveFile"), async file => {
+  unlockedSave = null; saveBtn.disabled = true;
+  try {
+    const plain = decodeSave(await file.text());
+    const out = unlock(plain);
+    if (decodeSave(encodeSave(out)) !== out) throw new Error("self-check failed");
+    unlockedSave = encodeSave(out);
+    const heroes = (plain.match(/^hero\|/gm) || []).length;
+    status(saveStatus, `Read ${file.name}: ${heroes} hero${heroes === 1 ? "" : "es"}. Ready: 9 classes, 12 zones, ` +
+      `${out.match(/^items\|(.*)$/m)[1].split(",").length} gear pieces, ${ACHIEVEMENTS.length} achievements.`, "ok");
+    saveBtn.disabled = false;
+  } catch (e) { status(saveStatus, e.message, "err"); }
+});
+saveBtn.addEventListener("click", () => unlockedSave && download("characters.txt", unlockedSave, "text/plain"));
+
+const exeStatus = document.getElementById("exeStatus"), exeBtn = document.getElementById("exeBtn");
+const optTalents = document.getElementById("optTalents"), optCaches = document.getElementById("optCaches");
+let exe = null;  // {bytes, have}
+const chosen = () => [optTalents.checked && "talents", optCaches.checked && "caches"].filter(Boolean);
+
+function refreshExe() {
+  if (!exe) return;
+  const todo = chosen().filter(p => !exe.have.includes(p));
+  const already = exe.have.length ? ` It already has: ${exe.have.map(p => DESCRIBE[p]).join(", ")}.` : "";
+  if (!chosen().length) status(exeStatus, "Game version recognised. Tick at least one patch." + already, "ok");
+  else if (!todo.length) status(exeStatus, "Game version recognised. It already has the ticked patches; nothing to do.", "ok");
+  else status(exeStatus, `Game version recognised.${already} Will add: ${todo.map(p => DESCRIBE[p]).join(", ")}.`, "ok");
+  exeBtn.disabled = !todo.length;
+}
+[optTalents, optCaches].forEach(cb => cb.addEventListener("change", refreshExe));
+
+wireDrop(document.getElementById("exeDrop"), document.getElementById("exeFile"), async file => {
+  exe = null; exeBtn.disabled = true;
+  try {
+    status(exeStatus, "Reading…");
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    const have = await identifyExe(bytes, p => status(exeStatus, `Checking the game version… ${Math.round(p * 100)}%`));
+    exe = {bytes, have};
+    refreshExe();
+  } catch (e) { status(exeStatus, e.message, "err"); }
+});
+exeBtn.addEventListener("click", async () => {
+  if (!exe) return;
+  exeBtn.disabled = true;
+  try {
+    const out = await patchExe(exe.bytes, exe.have, chosen(), p => status(exeStatus, `Patching… ${Math.round(p * 100)}%`));
+    download("AzerothSurvivors.exe", out, "application/octet-stream");
+    status(exeStatus, "Done: the patched AzerothSurvivors.exe is downloading.", "ok");
+  } catch (e) { status(exeStatus, e.message, "err"); }
+  exeBtn.disabled = false;
+});
+
+window.AZS = {decodeSave, encodeSave, unlock, identifyExe, patchExe, sha256Hex, sha1};
+</script>
+</body>
+</html>

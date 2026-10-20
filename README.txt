@@ -1,0 +1,69 @@
+Azeroth Survivors - unlock everything + game patches
+====================================================
+
+EASY WAY (nothing to install): double-click azs-unlocker.html. It opens in your browser,
+works offline and uploads nothing. Pick your save / game exe, download the result, done.
+The page explains where the files are.
+
+The rest of this file is for the command-line version (azs_tool.py), which does the same
+and needs Python 3 (python.org on Windows; tick "Add python.exe to PATH" while installing).
+CLOSE THE GAME before running anything, or it will overwrite the changes on exit.
+
+
+1) Unlock everything in your save
+---------------------------------
+    python azs_tool.py unlock
+
+This finds your save on its own (%APPDATA%\wenilla-rogue\characters.txt). If your save
+is somewhere else (Linux/Proton prefix, Steam Deck, ...), give the path:
+
+    python azs_tool.py unlock "/path/to/wenilla-rogue/characters.txt"
+
+What it does, for all 9 classes:
+  - every zone opened and beaten, Naxxramas included
+  - all gear pieces collected (every tier)
+  - every ring, trinket and amulet seen in the codex
+  - every achievement, which also unlocks the perks, companions and tabards behind them
+  - enough talent experience for every talent point (spend them in the Talents tab)
+  - lifetime stats raised to the achievement thresholds (1,000,000 kills, 50 wins, ...)
+
+It keeps your heroes, equipped gear, spent talents and settings, and leaves a backup
+next to the save (characters.txt.before-unlock-<date>.bak).
+
+
+2) Game patches (optional)
+--------------------------
+Two patches for the game exe, use either or both:
+
+  talents  The game normally stops at 51 talent points. Each class can now earn 129,
+           enough to max all three talent trees.
+  caches   Battleground caches (the chests elites drop) cost no gold, so all your gold
+           goes to rerolls. The cache price also stops climbing; reroll and skip prices
+           are tied to it, so they stay at their starting level.
+
+Run from the game folder (no names = both patches):
+
+    python azs_tool.py patch
+    python azs_tool.py patch talents
+    python azs_tool.py patch caches
+
+or point it at the exe:
+
+    python azs_tool.py patch "C:\Games\AzerothSurvivors\AzerothSurvivors.exe" caches
+
+It only patches the exact game version these were made for (or an exe it already patched,
+to add the other patch) and refuses anything else. The exe from before is kept next to it
+(AzerothSurvivors.exe.before-patch-<date>.bak). If the game updates itself, run it again;
+if the update changed the exe, it will say so and do nothing.
+Without the talents patch, the unlock still gives you the normal 51 points.
+
+
+Undo
+----
+Copy the .bak file back over characters.txt (or AzerothSurvivors.exe).
+
+
+Extras
+------
+    python azs_tool.py decode characters.txt plain.txt    readable copy of a save
+    python azs_tool.py encode plain.txt characters.txt    seal an edited copy again
