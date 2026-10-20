@@ -66,8 +66,8 @@ Thirteen patches for the game exe, use any combination:
   firstcache  The first battleground cache you open in a run offers only
            legendary amulets, so you can pick the amulet your run is built around.
   luck     Every race starts with 100% luck (Gnomes keep their +20% on top).
-  mindflay Mind Flay picks the nearest enemy and channels on it, like Drain
-           Life, so you don't have to face your targets.
+  mindflay Mind Flay channels on every enemy in range (like Drain Life does on
+           one), so you don't have to face your targets.
 
 Run from the game folder (no names = all thirteen patches):
 
