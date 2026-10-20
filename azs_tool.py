@@ -2,7 +2,7 @@
 """Azeroth Survivors save unlocker and game patcher.
 
   python azs_tool.py unlock [SAVE]                   unlock zones, gear, codex, achievements, talent XP
-  python azs_tool.py patch  [EXE] [talents] [caches] [bosses] [gold] [banish] [rerolls] [classes] [tfvisual] [tfweapon] [density] [firstcache] [luck] [mindflay] [lifesteal] [cacherate]
+  python azs_tool.py patch  [EXE] [talents] [caches] [bosses] [gold] [banish] [rerolls] [classes] [tfvisual] [tfweapon] [density] [firstcache] [luck] [mindflay] [lifesteal] [cacherate] [guardians]
                                      patch the game (all of them if none is named):
                                        talents  talent cap 51 -> 129
                                        caches   battleground caches cost no gold
@@ -19,6 +19,7 @@
                                        mindflay Mind Flay hits every enemy in range
                                        lifesteal  1% lifesteal for Shaman, Mage and Druid
                                        cacherate  caches spawn twice as often
+                                       guardians  slain guardians respawn at once
   python azs_tool.py decode SAVE OUT / encode TXT SAVE
 
 SAVE defaults to the game's save (%APPDATA%\\wenilla-rogue\\characters.txt, or
@@ -208,6 +209,7 @@ def cmd_unlock(path=None):
 # mindflay: Mind Flay channels on every enemy in range, like Drain Life, instead of firing where you face.
 # lifesteal: Shaman, Mage and Druid start with 1% lifesteal (the other classes already have some).
 # cacherate: battleground caches spawn twice as often (every 35 sec instead of 70).
+# guardians: a slain guardian's lair spawns a new guardian at once instead of 3 minutes later.
 _CMP = [1411633, 1411713, 1411926, 1413327, 2083186, 92748959, 92752017, 92752273, 92752574, 92796315,
         92805761, 93003212, 93006366, 93006494, 93006622, 93006750, 93006878, 93007006, 93007134, 93007266]
 _MOV = [1411640, 1411720, 1411933, 1413335, 92748966, 92752024, 92752280, 92752581, 92796323, 92805768,
@@ -371,6 +373,10 @@ PATCHES = {
         (93411111, "00007042", "00000c42"),  # run setup: first cache after 70 -> 35 sec
         (93464329, "f30f5805af627200", "f30f5805c34a4700"),  # spawn timer: += 70.0 -> += 35.0 (a 35.0 in .rdata)
     ],
+    # a slain guardian's lair is stamped "respawn at now + 180 sec"; the lair update respawns it once the clock passes
+    "guardians": [
+        (93577357, "f30f5805b7ff4f00", "0f1f840000000000"),  # guardian killed: lair respawns at now + 180 sec -> now (addss -> nop)
+    ],
 }
 DESCRIBE = {"talents": "talent cap 51 -> 129", "caches": "caches cost no gold",
             "bosses": "big bosses give a legendary treasure", "gold": "start every run with 20 gold",
@@ -381,7 +387,8 @@ DESCRIBE = {"talents": "talent cap 51 -> 129", "caches": "caches cost no gold",
             "luck": "every race starts with 100% luck",
             "mindflay": "Mind Flay hits every enemy in range",
             "lifesteal": "1% lifesteal for Shaman, Mage and Druid",
-            "cacherate": "caches spawn twice as often"}
+            "cacherate": "caches spawn twice as often",
+            "guardians": "slain guardians respawn at once"}
 STOCK_SHA256 = "3b46bad92e7771afa61c93658fd850937834a40f3671af8b1a3e1d2aeb8b63c7"
 # edits from earlier releases that are always undone (the first "gold" patch hit the wrong field)
 RETIRED = [(93410230, "00000000", "14000000"),

@@ -33,7 +33,7 @@ next to the save (characters.txt.before-unlock-<date>.bak).
 
 2) Game patches (optional)
 --------------------------
-Fifteen patches for the game exe, use any combination:
+Sixteen patches for the game exe, use any combination:
 
   talents  The game normally stops at 51 talent points. Each class can now earn 129,
            enough to max all three talent trees.
@@ -72,8 +72,11 @@ Fifteen patches for the game exe, use any combination:
   lifesteal  Shaman, Mage and Druid start with 1% lifesteal (the other classes
            already start with some).
   cacherate  Battleground caches spawn twice as often (every 35 sec, not 70).
+  guardians  When a guardian dies, its lair spawns a new one at once instead of
+           3 minutes later. Each still drops its treasure, and they keep
+           growing stronger.
 
-Run from the game folder (no names = all fifteen patches):
+Run from the game folder (no names = all sixteen patches):
 
     python azs_tool.py patch
     python azs_tool.py patch talents

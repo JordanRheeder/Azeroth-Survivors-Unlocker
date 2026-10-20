@@ -128,6 +128,9 @@
         start with some.</span></label>
     <label class="opt"><input type="checkbox" id="optCacherate" checked>
       <span><b>More caches.</b> Battleground caches spawn twice as often (every 35 sec instead of 70).</span></label>
+    <label class="opt"><input type="checkbox" id="optGuardians" checked>
+      <span><b>Endless guardians.</b> When a guardian dies, its lair spawns a new one at once instead of 3 minutes
+        later. Each still drops its treasure, and they keep growing stronger.</span></label>
     <label class="drop" id="exeDrop">
       <input type="file" id="exeFile" accept=".exe">
       Click to choose <b>AzerothSurvivors.exe</b>, or drop it here
@@ -480,10 +483,14 @@ const PATCHES = {
     [93411111, "00007042", "00000c42"],  // run setup: first cache after 70 -> 35 sec
     [93464329, "f30f5805af627200", "f30f5805c34a4700"],  // spawn timer: += 70.0 -> += 35.0 (a 35.0 in .rdata)
   ],
+  // a slain guardian's lair is stamped "respawn at now + 180 sec"; the lair update respawns it once the clock passes
+  guardians: [
+    [93577357, "f30f5805b7ff4f00", "0f1f840000000000"],  // guardian killed: lair respawns at now + 180 sec -> now (addss -> nop)
+  ],
 };
 const DESCRIBE = {talents: "talent cap 51 → 129", caches: "free battleground caches", bosses: "legendary treasure from big bosses", gold: "start every run with 20 gold", banish: "20 banishes per run", rerolls: "10 free rerolls per run", classes: "class changes", tfvisual: "Chain Lightning looks like Thunderfury",
                   tfweapon: "Worn Dagger shows as Thunderfury", density: "kill rewards ignore density", firstcache: "legendary amulets in the first cache", luck: "100% luck for every race", mindflay: "Mind Flay hits every enemy in range",
-                  lifesteal: "1% lifesteal for Shaman, Mage and Druid", cacherate: "caches spawn twice as often"};
+                  lifesteal: "1% lifesteal for Shaman, Mage and Druid", cacherate: "caches spawn twice as often", guardians: "slain guardians respawn at once"};
 const STOCK_SHA256 = "3b46bad92e7771afa61c93658fd850937834a40f3671af8b1a3e1d2aeb8b63c7";
 // edits from earlier releases that are always undone (the first "gold" patch hit the wrong field)
 const RETIRED = [[93410230, "00000000", "14000000"],
@@ -613,11 +620,12 @@ const optTalents = document.getElementById("optTalents"), optCaches = document.g
       optLuck = document.getElementById("optLuck"),
       optMindflay = document.getElementById("optMindflay"),
       optLifesteal = document.getElementById("optLifesteal"),
-      optCacherate = document.getElementById("optCacherate");
+      optCacherate = document.getElementById("optCacherate"),
+      optGuardians = document.getElementById("optGuardians");
 let exe = null;  // {bytes, have}
 const chosen = () => [optTalents.checked && "talents", optCaches.checked && "caches", optBosses.checked && "bosses", optGold.checked && "gold", optBanish.checked && "banish", optRerolls.checked && "rerolls", optClasses.checked && "classes", optTfvisual.checked && "tfvisual",
   optTfweapon.checked && "tfweapon", optDensity.checked && "density", optFirstcache.checked && "firstcache", optLuck.checked && "luck", optMindflay.checked && "mindflay",
-  optLifesteal.checked && "lifesteal", optCacherate.checked && "cacherate"].filter(Boolean);
+  optLifesteal.checked && "lifesteal", optCacherate.checked && "cacherate", optGuardians.checked && "guardians"].filter(Boolean);
 
 function refreshExe() {
   if (!exe) return;
@@ -628,7 +636,7 @@ function refreshExe() {
   else status(exeStatus, `Game version recognised.${already} Will add: ${todo.map(p => DESCRIBE[p]).join(", ")}.`, "ok");
   exeBtn.disabled = !todo.length;
 }
-[optTalents, optCaches, optBosses, optGold, optBanish, optRerolls, optClasses, optTfvisual, optTfweapon, optDensity, optFirstcache, optLuck, optMindflay, optLifesteal, optCacherate].forEach(cb => cb.addEventListener("change", refreshExe));
+[optTalents, optCaches, optBosses, optGold, optBanish, optRerolls, optClasses, optTfvisual, optTfweapon, optDensity, optFirstcache, optLuck, optMindflay, optLifesteal, optCacherate, optGuardians].forEach(cb => cb.addEventListener("change", refreshExe));
 
 wireDrop(document.getElementById("exeDrop"), document.getElementById("exeFile"), async file => {
   exe = null; exeBtn.disabled = true;
