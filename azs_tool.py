@@ -2,13 +2,14 @@
 """Azeroth Survivors save unlocker and game patcher.
 
   python azs_tool.py unlock [SAVE]                   unlock zones, gear, codex, achievements, talent XP
-  python azs_tool.py patch  [EXE] [talents] [caches] [bosses] [gold] [banish]
+  python azs_tool.py patch  [EXE] [talents] [caches] [bosses] [gold] [banish] [rerolls]
                                      patch the game (all of them if none is named):
                                        talents  talent cap 51 -> 129
                                        caches   battleground caches cost no gold
                                        bosses   big bosses give a legendary treasure
                                        gold     start every run with 20 gold
-                                       banish   double banishes per run (3 -> 6)
+                                       banish   10 banishes per run
+                                       rerolls  10 free rerolls per run
   python azs_tool.py decode SAVE OUT / encode TXT SAVE
 
 SAVE defaults to the game's save (%APPDATA%\\wenilla-rogue\\characters.txt, or
@@ -179,8 +180,10 @@ def cmd_unlock(path=None):
 #   reward uses the mark up. Guardian and elite treasures roll as before. The new code lives in three
 #   int3 padding gaps in .text.
 # gold:    the run setup zeroes shield and gold together; start every run with 20 gold instead.
-# banish:  double the banishes a run starts with (Banish rank 1/2/3 -> 2/4/6). Using one only
-#   needs the count to be non-zero, so nothing else caps it.
+# banish:  every run starts with 10 banishes, whatever the Banish perk rank. Using one only needs
+#   the count to be non-zero, so nothing else caps it.
+# rerolls: every run starts with 10 free rerolls, whatever the reroll perk rank; after those,
+#   rerolls cost gold as usual.
 _CMP = [1411633, 1411713, 1411926, 1413327, 2083186, 92748959, 92752017, 92752273, 92752574, 92796315,
         92805761, 93003212, 93006366, 93006494, 93006622, 93006750, 93006878, 93007006, 93007134, 93007266]
 _MOV = [1411640, 1411720, 1411933, 1413335, 92748966, 92752024, 92752280, 92752581, 92796323, 92805768,
@@ -217,16 +220,21 @@ PATCHES = {
               "c7854c04000000000000c7855004000014000000e9cbd64305"),
              (93410304, "48c7854c04000000000000", "e92229bcfa660f1f440000")],
     # run setup copies the starting banish count from the run config; detour the load into the int3
-    # gap after cave B: load it, double it, jump back to the original store
-    "banish": [(5062064, "cccccccccccccccccccccccccc", "8b856c0b000001c0e9061d4405"),
+    # gap after cave B: eax = 10, jump back to the original store
+    "banish": [(5062064, "cccccccccccccccccccccccccc", "b80a000000e9091d4405cccccc"),
                (93412029, "8b856c0b0000", "e9eee2bbfa90")],
+    # run setup stores the free reroll count from edi; detour it into the int3 gap after cave C:
+    # rerolls = 10, jump back
+    "rerolls": [(4979248, "cccccccccccccccccccccccccccccc", "c785f40400000a000000e9245a4505"),
+                (93410397, "89bdf4040000", "e9cea5bafa90")],
 }
 DESCRIBE = {"talents": "talent cap 51 -> 129", "caches": "caches cost no gold",
             "bosses": "big bosses give a legendary treasure", "gold": "start every run with 20 gold",
-            "banish": "double banishes per run (3 -> 6)"}
+            "banish": "10 banishes per run", "rerolls": "10 free rerolls per run"}
 STOCK_SHA256 = "3b46bad92e7771afa61c93658fd850937834a40f3671af8b1a3e1d2aeb8b63c7"
 # edits from earlier releases that are always undone (the first "gold" patch hit the wrong field)
-RETIRED = [(93410230, "00000000", "14000000")]
+RETIRED = [(93410230, "00000000", "14000000"),
+           (5062064, "cccccccccccccccccccccccccc", "8b856c0b000001c0e9061d4405")]  # "double banishes" body
 
 
 def _state(d):

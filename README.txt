@@ -33,7 +33,7 @@ next to the save (characters.txt.before-unlock-<date>.bak).
 
 2) Game patches (optional)
 --------------------------
-Five patches for the game exe, use any combination:
+Six patches for the game exe, use any combination:
 
   talents  The game normally stops at 51 talent points. Each class can now earn 129,
            enough to max all three talent trees.
@@ -46,10 +46,11 @@ Five patches for the game exe, use any combination:
            treasure. Now each one gives a treasure with legendary rewards. Guardian and
            elite treasures stay as they were.
   gold     Every run starts with 20 gold instead of none.
-  banish   The Banish perk gives twice as many banishes per run: 2 / 4 / 6 at
-           rank 1 / 2 / 3 instead of 1 / 2 / 3.
+  banish   Every run starts with 10 banishes, whatever your Banish perk rank.
+  rerolls  Every run starts with 10 free rerolls, whatever your perk rank. After
+           those, rerolls cost gold as usual.
 
-Run from the game folder (no names = all five patches):
+Run from the game folder (no names = all six patches):
 
     python azs_tool.py patch
     python azs_tool.py patch talents

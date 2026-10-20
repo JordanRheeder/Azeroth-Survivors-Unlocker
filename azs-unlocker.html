@@ -95,8 +95,10 @@
     <label class="opt"><input type="checkbox" id="optGold" checked>
       <span><b>Start with 20 gold.</b> Every run begins with 20 gold instead of none.</span></label>
     <label class="opt"><input type="checkbox" id="optBanish" checked>
-      <span><b>Double banishes.</b> The Banish perk gives twice as many banishes per run: 2 / 4 / 6 at rank 1 / 2 / 3
-        instead of 1 / 2 / 3.</span></label>
+      <span><b>10 banishes.</b> Every run starts with 10 banishes, whatever your Banish perk rank.</span></label>
+    <label class="opt"><input type="checkbox" id="optRerolls" checked>
+      <span><b>10 free rerolls.</b> Every run starts with 10 free rerolls, whatever your perk rank. After those,
+        rerolls cost gold as usual.</span></label>
     <label class="drop" id="exeDrop">
       <input type="file" id="exeFile" accept=".exe">
       Click to choose <b>AzerothSurvivors.exe</b>, or drop it here
@@ -318,8 +320,10 @@ function unlock(plain) {
 //          reward uses the mark up. Guardian and elite treasures roll as before. The new code lives in
 //          three int3 padding gaps in .text.
 // gold:    the run setup zeroes shield and gold together; start every run with 20 gold instead.
-// banish:  double the banishes a run starts with (Banish rank 1/2/3 -> 2/4/6). Using one only needs
-//          the count to be non-zero, so nothing else caps it.
+// banish:  every run starts with 10 banishes, whatever the Banish perk rank. Using one only needs the
+//          count to be non-zero, so nothing else caps it.
+// rerolls: every run starts with 10 free rerolls, whatever the reroll perk rank; after those, rerolls
+//          cost gold as usual.
 const EXE_SIZE = 139728384;
 const CMP_OFF = [1411633, 1411713, 1411926, 1413327, 2083186, 92748959, 92752017, 92752273, 92752574, 92796315,
   92805761, 93003212, 93006366, 93006494, 93006622, 93006750, 93006878, 93007006, 93007134, 93007266];
@@ -346,14 +350,19 @@ const PATCHES = {
   gold: [[5078311, "cccccccccccccccccccccccccccccccccccccccccccccccccc", "c7854c04000000000000c7855004000014000000e9cbd64305"],
          [93410304, "48c7854c04000000000000", "e92229bcfa660f1f440000"]],
   // run setup copies the starting banish count from the run config; detour the load into the int3 gap
-  // after cave B: load it, double it, jump back to the original store
-  banish: [[5062064, "cccccccccccccccccccccccccc", "8b856c0b000001c0e9061d4405"],
+  // after cave B: eax = 10, jump back to the original store
+  banish: [[5062064, "cccccccccccccccccccccccccc", "b80a000000e9091d4405cccccc"],
            [93412029, "8b856c0b0000", "e9eee2bbfa90"]],
+  // run setup stores the free reroll count from edi; detour it into the int3 gap after cave C:
+  // rerolls = 10, jump back
+  rerolls: [[4979248, "cccccccccccccccccccccccccccccc", "c785f40400000a000000e9245a4505"],
+            [93410397, "89bdf4040000", "e9cea5bafa90"]],
 };
-const DESCRIBE = {talents: "talent cap 51 → 129", caches: "free battleground caches", bosses: "legendary treasure from big bosses", gold: "start every run with 20 gold", banish: "double banishes (3 → 6)"};
+const DESCRIBE = {talents: "talent cap 51 → 129", caches: "free battleground caches", bosses: "legendary treasure from big bosses", gold: "start every run with 20 gold", banish: "10 banishes per run", rerolls: "10 free rerolls per run"};
 const STOCK_SHA256 = "3b46bad92e7771afa61c93658fd850937834a40f3671af8b1a3e1d2aeb8b63c7";
 // edits from earlier releases that are always undone (the first "gold" patch hit the wrong field)
-const RETIRED = [[93410230, "00000000", "14000000"]];
+const RETIRED = [[93410230, "00000000", "14000000"],
+                 [5062064, "cccccccccccccccccccccccccc", "8b856c0b000001c0e9061d4405"]];  // "double banishes" body
 const WRONG_VERSION = "This AzerothSurvivors.exe is a different version than these patches were made for. Nothing was changed.";
 const hexAt = (u, o, n) => Array.from(u.subarray(o, o + n), b => b.toString(16).padStart(2, "0")).join("");
 
@@ -418,9 +427,10 @@ saveBtn.addEventListener("click", () => unlockedSave && download("characters.txt
 const exeStatus = document.getElementById("exeStatus"), exeBtn = document.getElementById("exeBtn");
 const optTalents = document.getElementById("optTalents"), optCaches = document.getElementById("optCaches"),
       optBosses = document.getElementById("optBosses"), optGold = document.getElementById("optGold"),
-      optBanish = document.getElementById("optBanish");
+      optBanish = document.getElementById("optBanish"),
+      optRerolls = document.getElementById("optRerolls");
 let exe = null;  // {bytes, have}
-const chosen = () => [optTalents.checked && "talents", optCaches.checked && "caches", optBosses.checked && "bosses", optGold.checked && "gold", optBanish.checked && "banish"].filter(Boolean);
+const chosen = () => [optTalents.checked && "talents", optCaches.checked && "caches", optBosses.checked && "bosses", optGold.checked && "gold", optBanish.checked && "banish", optRerolls.checked && "rerolls"].filter(Boolean);
 
 function refreshExe() {
   if (!exe) return;
@@ -431,7 +441,7 @@ function refreshExe() {
   else status(exeStatus, `Game version recognised.${already} Will add: ${todo.map(p => DESCRIBE[p]).join(", ")}.`, "ok");
   exeBtn.disabled = !todo.length;
 }
-[optTalents, optCaches, optBosses, optGold, optBanish].forEach(cb => cb.addEventListener("change", refreshExe));
+[optTalents, optCaches, optBosses, optGold, optBanish, optRerolls].forEach(cb => cb.addEventListener("change", refreshExe));
 
 wireDrop(document.getElementById("exeDrop"), document.getElementById("exeFile"), async file => {
   exe = null; exeBtn.disabled = true;
