@@ -84,8 +84,13 @@
     <label class="opt"><input type="checkbox" id="optTalents" checked>
       <span><b>Talent cap 51 &rarr; 129.</b> Each class can earn enough points to max all three talent trees.</span></label>
     <label class="opt"><input type="checkbox" id="optCaches" checked>
-      <span><b>Free battleground caches.</b> Opening a cache costs no gold, so your gold is all for rerolls. The
-        cache price stops climbing too, which keeps reroll prices (tied to it) at their starting level.</span></label>
+      <span><b>Free battleground caches.</b> The caches elites drop cost no gold, so your gold is all for rerolls. The
+        cache price stops climbing too, which keeps reroll prices (tied to it) at their starting level. Walk over a
+        cache to open it; one opens at a time, the rest wait on the ground until you've picked.</span></label>
+    <label class="opt"><input type="checkbox" id="optBosses" checked>
+      <span><b>Legendary treasure from big bosses.</b> The big bosses that arrive every few minutes (Hogger and
+        co.) normally give no treasure. With this, each one gives a treasure with legendary rewards. Guardian and
+        elite treasures stay as they were.</span></label>
     <label class="drop" id="exeDrop">
       <input type="file" id="exeFile" accept=".exe">
       Click to choose <b>AzerothSurvivors.exe</b>, or drop it here
@@ -297,7 +302,14 @@ function unlock(plain) {
 // talents: point n costs 80 + 15*n XP; the counting loop stops at `cmp reg, 0x36b` and returns 51.
 //          Raise both to 129 points (bound 0x7fd).
 // caches:  in the cache purchase routine, skip the "needs gold" check, take no gold, and keep the
-//          price from climbing (reroll and skip prices are derived from it).
+//          price from climbing (reroll and skip prices are derived from it). Walking over a cache only
+//          opens it when no cache treasure is already queued, so the window closes after each pick.
+// bosses:  big bosses (Hogger and co.) normally give no treasure. On a boss kill, also queue the bonus
+//          treasure guardians give and count it in a "boss treasures" counter (a spare dword at the end of
+//          .data). When that treasure is dealt and the counter is set, its rarity-roll luck bonus is
+//          1,000,000 instead of 0.25 (weights 60 : 25L : 10L^2 : 4L^3 : L^4), so it is legendary; picking a
+//          reward uses the mark up. Guardian and elite treasures roll as before. The new code lives in
+//          three int3 padding gaps in .text.
 const EXE_SIZE = 139728384;
 const CMP_OFF = [1411633, 1411713, 1411926, 1413327, 2083186, 92748959, 92752017, 92752273, 92752574, 92796315,
   92805761, 93003212, 93006366, 93006494, 93006622, 93006750, 93006878, 93007006, 93007134, 93007266];
@@ -305,38 +317,46 @@ const MOV_OFF = [1411640, 1411720, 1411933, 1413335, 92748966, 92752024, 9275228
   93003220, 93006374, 93006502, 93006630, 93006758, 93006886, 93007014, 93007142, 93007274];
 const PATCHES = {
   talents: [...CMP_OFF.map(o => [o, "6b030000", "fd070000"]), ...MOV_OFF.map(o => [o, "33000000", "81000000"])],
-  caches: [[93639589, "4429f8", "0f1f00"], [93639592, "0f82c6000000", "660f1f440000"], [93639659, "899698090000", "660f1f440000"]],
+  caches: [[93639589, "4429f8", "0f1f00"], [93639592, "0f82c6000000", "660f1f440000"], [93639659, "899698090000", "660f1f440000"],
+           [93450587, "80b9c709000000", "83b95809000000"], [93450596, "80b9ca09000000", "ebaa0f1f440000"]],
+  // cave A (big boss killed), cave B (deal bonus treasure), cave C (reward picked), their three hooks,
+  // and the .data VirtualSize (0x4c848 -> 0x4d000) so the counter at 0x147fe0ff0 is in-section
+  bosses: [
+    [5078288, "cccccccccccccccccccccccccccccccccccccccccccccc", "ff8698060000ff8660090000ff05ce86b007e918664605"],
+    [5062028, "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc", "488d4df0833d59c6b00700740af30f10158b46a505eb08f30f101539008805e98d074805"],
+    [4979210, "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc", "8b865c09000083f80183d0ff89865c090000833dcd09b207007406ff0dc509b207e9c3604905"],
+    [93578041, "ff8698060000", "e9d299b9fa90"],
+    [93668657, "488d4df0f30f1015a7f83f00", "e956f8b7fa0f1f8000000000"],
+    [93674209, "8b865c09000083f80183d0ff89865c090000", "e9249fb6fa0f1f8400000000000f1f440000"],
+    [616, "48c80400", "00d00400"],
+  ],
 };
-const DESCRIBE = {talents: "talent cap 51 → 129", caches: "free battleground caches"};
-// sha256 of the game build for each set of applied patches (key: sorted patch names)
-const KNOWN = {
-  "": "3b46bad92e7771afa61c93658fd850937834a40f3671af8b1a3e1d2aeb8b63c7",
-  "caches": "beae4b6e54162a2a8cbc4dc4c822f51e138c9f3ce08f451122e5ed32beb5b0f0",
-  "talents": "707833b608765073160adce3681048bec7b5e73c20ae568d131f29b09b8ea1c4",
-  "caches,talents": "0117a217f568f696a05cdebb41bfa5658a041b9be7fc210e3f5960a7f2748b19",
-};
+const DESCRIBE = {talents: "talent cap 51 → 129", caches: "free battleground caches", bosses: "legendary treasure from big bosses"};
+const STOCK_SHA256 = "3b46bad92e7771afa61c93658fd850937834a40f3671af8b1a3e1d2aeb8b63c7";
 const WRONG_VERSION = "This AzerothSurvivors.exe is a different version than these patches were made for. Nothing was changed.";
+const hexAt = (u, o, n) => Array.from(u.subarray(o, o + n), b => b.toString(16).padStart(2, "0")).join("");
 
-// which patches a game exe already has, or throws if it is not a known build
+// which patches a game exe fully has, or throws if it is not the supported build (with any of our edits)
 async function identifyExe(bytes, onProgress) {
   if (bytes.length !== EXE_SIZE) throw new Error(WRONG_VERSION);
-  const h = await sha256Hex(bytes, onProgress);
-  const key = Object.keys(KNOWN).find(k => KNOWN[k] === h);
-  if (key === undefined) throw new Error(WRONG_VERSION);
-  return key ? key.split(",") : [];
+  const stock = new Uint8Array(bytes), have = [];
+  for (const [name, edits] of Object.entries(PATCHES)) {
+    let applied = 0;
+    for (const [o, old, neu] of edits)
+      if (hexAt(stock, o, neu.length / 2) === neu) { stock.set(hex(old), o); applied++; }
+    if (applied === edits.length) have.push(name);
+  }
+  if (await sha256Hex(stock, onProgress) !== STOCK_SHA256) throw new Error(WRONG_VERSION);
+  return have;
 }
 
-// apply `want` on top of `have` (both arrays of patch names); returns a new byte array
+// apply `want` on top of an identified exe; returns a new byte array
 async function patchExe(bytes, have, want, onProgress) {
   const out = new Uint8Array(bytes);
   for (const p of want.filter(p => !have.includes(p)))
-    for (const [o, old, neu] of PATCHES[p]) {
-      const cur = Array.from(out.subarray(o, o + old.length / 2), b => b.toString(16).padStart(2, "0")).join("");
-      if (cur !== old) throw new Error("unexpected bytes");
-      out.set(hex(neu), o);
-    }
-  const key = [...new Set([...have, ...want])].sort().join(",");
-  if (await sha256Hex(out, onProgress) !== KNOWN[key]) throw new Error("self-check failed");
+    for (const [o, , neu] of PATCHES[p]) out.set(hex(neu), o);  // also completes a partly applied older patch
+  const now = await identifyExe(out, onProgress);
+  if ([...new Set([...have, ...want])].some(p => !now.includes(p))) throw new Error("self-check failed");
   return out;
 }
 
@@ -373,9 +393,10 @@ wireDrop(document.getElementById("saveDrop"), document.getElementById("saveFile"
 saveBtn.addEventListener("click", () => unlockedSave && download("characters.txt", unlockedSave, "text/plain"));
 
 const exeStatus = document.getElementById("exeStatus"), exeBtn = document.getElementById("exeBtn");
-const optTalents = document.getElementById("optTalents"), optCaches = document.getElementById("optCaches");
+const optTalents = document.getElementById("optTalents"), optCaches = document.getElementById("optCaches"),
+      optBosses = document.getElementById("optBosses");
 let exe = null;  // {bytes, have}
-const chosen = () => [optTalents.checked && "talents", optCaches.checked && "caches"].filter(Boolean);
+const chosen = () => [optTalents.checked && "talents", optCaches.checked && "caches", optBosses.checked && "bosses"].filter(Boolean);
 
 function refreshExe() {
   if (!exe) return;
@@ -386,7 +407,7 @@ function refreshExe() {
   else status(exeStatus, `Game version recognised.${already} Will add: ${todo.map(p => DESCRIBE[p]).join(", ")}.`, "ok");
   exeBtn.disabled = !todo.length;
 }
-[optTalents, optCaches].forEach(cb => cb.addEventListener("change", refreshExe));
+[optTalents, optCaches, optBosses].forEach(cb => cb.addEventListener("change", refreshExe));
 
 wireDrop(document.getElementById("exeDrop"), document.getElementById("exeFile"), async file => {
   exe = null; exeBtn.disabled = true;

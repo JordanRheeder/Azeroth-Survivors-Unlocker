@@ -2,9 +2,11 @@
 """Azeroth Survivors save unlocker and game patcher.
 
   python azs_tool.py unlock [SAVE]                   unlock zones, gear, codex, achievements, talent XP
-  python azs_tool.py patch  [EXE] [talents] [caches] patch the game (both if neither is named):
-                                                       talents  talent cap 51 -> 129
-                                                       caches   battleground caches cost no gold
+  python azs_tool.py patch  [EXE] [talents] [caches] [bosses]
+                                     patch the game (all three if none is named):
+                                       talents  talent cap 51 -> 129
+                                       caches   battleground caches cost no gold
+                                       bosses   big bosses give a legendary treasure
   python azs_tool.py decode SAVE OUT / encode TXT SAVE
 
 SAVE defaults to the game's save (%APPDATA%\\wenilla-rogue\\characters.txt, or
@@ -164,25 +166,64 @@ def cmd_unlock(path=None):
 # talents: point n costs 80 + 15*n XP; the game counts points in a loop unrolled by three that
 #   stops at `cmp reg, 0x36b` and then returns 51. Raise both to 129 points (bound 0x7fd).
 # caches:  in the cache purchase routine, skip the "needs gold" check, take no gold, and keep
-#   the price from climbing (reroll and skip prices are derived from it).
+#   the price from climbing (reroll and skip prices are derived from it). Walking over a cache
+#   only opens it when no cache treasure is already queued, so the treasure window closes after
+#   each pick instead of chaining through every cache picked up at once.
+# bosses:  big bosses (Hogger and co.) normally give no treasure. On a boss kill, also queue the
+#   bonus treasure guardians give and count it in a "boss treasures" counter (a spare dword at the
+#   end of .data). When that treasure is dealt and the counter is set, its rarity-roll luck bonus is
+#   1,000,000 instead of 0.25 (weights 60 : 25L : 10L^2 : 4L^3 : L^4), so it is legendary; picking a
+#   reward uses the mark up. Guardian and elite treasures roll as before. The new code lives in three
+#   int3 padding gaps in .text.
 _CMP = [1411633, 1411713, 1411926, 1413327, 2083186, 92748959, 92752017, 92752273, 92752574, 92796315,
         92805761, 93003212, 93006366, 93006494, 93006622, 93006750, 93006878, 93007006, 93007134, 93007266]
 _MOV = [1411640, 1411720, 1411933, 1413335, 92748966, 92752024, 92752280, 92752581, 92796323, 92805768,
         93003220, 93006374, 93006502, 93006630, 93006758, 93006886, 93007014, 93007142, 93007274]
 PATCHES = {
     "talents": [(o, "6b030000", "fd070000") for o in _CMP] + [(o, "33000000", "81000000") for o in _MOV],
-    "caches": [(93639589, "4429f8", "0f1f00"),                # sub eax, r15d   -> nop
-               (93639592, "0f82c6000000", "660f1f440000"),    # jb needs-gold   -> nop
-               (93639659, "899698090000", "660f1f440000")],   # store new price -> nop
+    "caches": [(93639589, "4429f8", "0f1f00"),                   # sub eax, r15d           -> nop
+               (93639592, "0f82c6000000", "660f1f440000"),       # jb needs-gold           -> nop
+               (93639659, "899698090000", "660f1f440000"),       # store new price         -> nop
+               (93450587, "80b9c709000000", "83b95809000000"),   # walk-over: click option -> treasure queued?
+               (93450596, "80b9ca09000000", "ebaa0f1f440000")],  # queued: leave it on the ground
+    # cave A (big boss killed), cave B (deal bonus treasure), cave C (reward picked), their three
+    # hooks, and the .data VirtualSize (0x4c848 -> 0x4d000) so the counter at 0x147fe0ff0 is in-section
+    "bosses": [
+        (5078288, "cccccccccccccccccccccccccccccccccccccccccccccc",
+         "ff8698060000ff8660090000ff05ce86b007e918664605"),
+        (5062028, "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+         "488d4df0833d59c6b00700740af30f10158b46a505eb08f30f101539008805e98d074805"),
+        (4979210, "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+         "8b865c09000083f80183d0ff89865c090000833dcd09b207007406ff0dc509b207e9c3604905"),
+        (93578041, "ff8698060000",
+         "e9d299b9fa90"),
+        (93668657, "488d4df0f30f1015a7f83f00",
+         "e956f8b7fa0f1f8000000000"),
+        (93674209, "8b865c09000083f80183d0ff89865c090000",
+         "e9249fb6fa0f1f8400000000000f1f440000"),
+        (616, "48c80400",
+         "00d00400"),
+    ],
 }
-DESCRIBE = {"talents": "talent cap 51 -> 129", "caches": "caches cost no gold"}
-# sha256 of the game build for each set of applied patches
-KNOWN = {
-    frozenset(): "3b46bad92e7771afa61c93658fd850937834a40f3671af8b1a3e1d2aeb8b63c7",
-    frozenset({"caches"}): "beae4b6e54162a2a8cbc4dc4c822f51e138c9f3ce08f451122e5ed32beb5b0f0",
-    frozenset({"talents"}): "707833b608765073160adce3681048bec7b5e73c20ae568d131f29b09b8ea1c4",
-    frozenset({"talents", "caches"}): "0117a217f568f696a05cdebb41bfa5658a041b9be7fc210e3f5960a7f2748b19",
-}
+DESCRIBE = {"talents": "talent cap 51 -> 129", "caches": "caches cost no gold",
+            "bosses": "big bosses give a legendary treasure"}
+STOCK_SHA256 = "3b46bad92e7771afa61c93658fd850937834a40f3671af8b1a3e1d2aeb8b63c7"
+
+
+def _state(d):
+    """Patches fully applied to d, or None if d is not the supported build (with any of our edits)."""
+    stock = bytearray(d)
+    have = set()
+    for name, edits in PATCHES.items():
+        applied = 0
+        for off, old, new in edits:
+            cur = stock[off:off + len(new) // 2].hex()
+            if cur == new:
+                stock[off:off + len(old) // 2] = bytes.fromhex(old)
+                applied += 1
+        if applied == len(edits):
+            have.add(name)
+    return have if hashlib.sha256(stock).hexdigest() == STOCK_SHA256 else None
 
 
 def cmd_patch(*args):
@@ -190,8 +231,7 @@ def cmd_patch(*args):
     paths = [a for a in args if a not in PATCHES]
     path = paths[0] if paths else "AzerothSurvivors.exe"
     d = bytearray(open(path, "rb").read())
-    h = hashlib.sha256(d).hexdigest()
-    have = next((s for s, k in KNOWN.items() if k == h), None)
+    have = _state(d)
     if have is None:
         sys.exit("this AzerothSurvivors.exe is a different version than the patches were made for; not touching it")
     todo = [p for p in want if p not in have]
@@ -199,9 +239,8 @@ def cmd_patch(*args):
         return print("already patched: " + ", ".join(DESCRIBE[p] for p in want))
     for p in todo:
         for off, old, new in PATCHES[p]:
-            assert d[off:off + len(old) // 2].hex() == old
-            d[off:off + len(new) // 2] = bytes.fromhex(new)
-    assert hashlib.sha256(d).hexdigest() == KNOWN[have | set(todo)]
+            d[off:off + len(new) // 2] = bytes.fromhex(new)  # also completes a partly applied older patch
+    assert _state(d) == have | set(todo)
     bak = backup(path, "before-patch")
     open(path, "wb").write(d)
     print(f"patched {path}: " + ", ".join(DESCRIBE[p] for p in todo) + f"\nbackup: {bak}")

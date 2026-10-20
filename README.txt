@@ -33,28 +33,32 @@ next to the save (characters.txt.before-unlock-<date>.bak).
 
 2) Game patches (optional)
 --------------------------
-Two patches for the game exe, use either or both:
+Three patches for the game exe, use any combination:
 
   talents  The game normally stops at 51 talent points. Each class can now earn 129,
            enough to max all three talent trees.
   caches   Battleground caches (the chests elites drop) cost no gold, so all your gold
            goes to rerolls. The cache price also stops climbing; reroll and skip prices
-           are tied to it, so they stay at their starting level.
+           are tied to it, so they stay at their starting level. Walk over a cache to open
+           it: one opens at a time, and any others stay on the ground until you've picked.
+  bosses   The big bosses that arrive every few minutes (Hogger and co.) normally give no
+           treasure. Now each one gives a treasure with legendary rewards. Guardian and
+           elite treasures stay as they were.
 
-Run from the game folder (no names = both patches):
+Run from the game folder (no names = all three patches):
 
     python azs_tool.py patch
     python azs_tool.py patch talents
-    python azs_tool.py patch caches
+    python azs_tool.py patch caches bosses
 
 or point it at the exe:
 
     python azs_tool.py patch "C:\Games\AzerothSurvivors\AzerothSurvivors.exe" caches
 
 It only patches the exact game version these were made for (or an exe it already patched,
-to add the other patch) and refuses anything else. The exe from before is kept next to it
-(AzerothSurvivors.exe.before-patch-<date>.bak). If the game updates itself, run it again;
-if the update changed the exe, it will say so and do nothing.
+to add more patches or update an older one) and refuses anything else. The exe from before
+is kept next to it (AzerothSurvivors.exe.before-patch-<date>.bak). If the game updates
+itself, run it again; if the update changed the exe, it will say so and do nothing.
 Without the talents patch, the unlock still gives you the normal 51 points.
 
 
